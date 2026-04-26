@@ -416,13 +416,19 @@
         // ==============================
         const BASE_URL = "https://matchbook-ecosystem-mutt.ngrok-free.dev";
 
-// ТЕСТ — удали после проверки
-setTimeout(() => {
-    fetch(`${BASE_URL}/get_balance?user_id=12345`)
-        .then(r => r.json())
-        .then(d => alert('ТЕСТ: ' + JSON.stringify(d)))
-        .catch(e => alert('ОШИБКА: ' + e.message));
-}, 500);
+        // Единая функция запросов — добавляет заголовок для ngrok
+        const HEADERS = {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+        };
+        async function api(path, options = {}) {
+            const url = BASE_URL + path;
+            const res = await fetch(url, {
+                ...options,
+                headers: { ...HEADERS, ...(options.headers || {}) }
+            });
+            return res;
+        }
 
         // ==============================
         // TELEGRAM INIT
@@ -471,7 +477,7 @@ setTimeout(() => {
         async function updateUI() {
             const uid = getUserId();
             try {
-                const r = await fetch(`${BASE_URL}/get_balance?user_id=${uid}`);
+                const r = await api(`/get_balance?user_id=${uid}`);
                 if (!r.ok) throw new Error('server error');
                 const d = await r.json();
                 document.getElementById('user-balance').innerText = d.balance.toLocaleString('ru-RU');
@@ -550,9 +556,8 @@ setTimeout(() => {
             // Сначала запрос к серверу
             let serverData = null;
             try {
-                const r = await fetch(`${BASE_URL}/bonus`, {
+                const r = await api(`/bonus`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: uid })
                 });
                 serverData = await r.json();
@@ -617,9 +622,8 @@ setTimeout(() => {
             display.textContent = '🎰';
 
             try {
-                const r = await fetch(`${BASE_URL}/play_roulette`, {
+                const r = await api(`/play_roulette`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: uid, bet: bet, type: type })
                 });
                 const d = await r.json();
@@ -690,9 +694,8 @@ setTimeout(() => {
             if (!bet || bet < 1) return showToast('Введи ставку!', 'lose');
 
             try {
-                const r = await fetch(`${BASE_URL}/bj_start`, {
+                const r = await api(`/bj_start`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: uid, bet: bet })
                 });
                 const d = await r.json();
@@ -714,9 +717,8 @@ setTimeout(() => {
         async function bjAction(action) {
             const uid = getUserId();
             try {
-                const r = await fetch(`${BASE_URL}/bj_action`, {
+                const r = await api(`/bj_action`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: uid, action: action })
                 });
                 const d = await r.json();

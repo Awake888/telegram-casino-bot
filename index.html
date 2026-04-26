@@ -5,76 +5,162 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; }
-        .game-card { background: #2c2c2c; border-radius: 15px; padding: 15px; margin-bottom: 10px; border: 1px solid #444; }
-        button { background: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
-        .balance { font-size: 24px; color: #f1c40f; margin-bottom: 20px; }
-        input { padding: 8px; border-radius: 5px; border: none; margin-bottom: 10px; text-align: center; }
+        :root { --accent: #f1c40f; --bg: #1a1a1a; --card: #2c2c2c; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; padding-bottom: 70px; }
+        .header { padding: 20px; background: var(--card); border-bottom: 2px solid var(--accent); position: sticky; top: 0; z-index: 10; }
+        .balance { font-size: 24px; color: var(--accent); font-weight: bold; }
+        .page { display: none; padding: 20px; animation: fadeIn 0.3s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .game-card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid #444; }
+        button { background: #0088cc; color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; margin: 5px; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
+        input { background: #333; color: white; border: 1px solid #555; padding: 10px; border-radius: 8px; width: 80%; margin-bottom: 15px; text-align: center; }
+
+        /* Навигация */
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #444; }
+        .nav-item { color: #888; font-size: 12px; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+
+        /* Визуал Колеса */
+        .wheel-container { width: 200px; height: 200px; border: 5px solid var(--accent); border-radius: 50%; margin: 20px auto; position: relative; transition: transform 3s cubic-bezier(0.1, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 40px; background: repeating-conic-gradient(from 0deg, #e74c3c 0deg 30deg, #2c3e50 30deg 60deg); }
     </style>
 </head>
 <body>
-    <div class="balance">Баланс: <span id="user-balance">...</span> 🪙</div>
 
-    <div class="game-card">
-        <h3>🎰 Колесо Фортуны</h3>
-        <p id="timer">Раз в 2 часа</p>
-        <button onclick="claimBonus()">Получить бонус</button>
+    <div class="header">
+        <div class="balance">💰 <span id="user-balance">0</span></div>
     </div>
 
-    <div class="game-card">
-        <h3>🔴 Рулетка</h3>
-        <input type="number" id="roulette-bet" value="100" min="1"> <br>
-        <button onclick="playRoulette('red')" style="background: #e74c3c;">Красное (x2)</button>
-        <button onclick="playRoulette('black')" style="background: #2c3e50;">Черное (x2)</button>
+    <div id="wheel-page" class="page active">
+        <div class="game-card">
+            <h2>🎡 Колесо Удачи</h2>
+            <div id="wheel-visual" class="wheel-container">🎁</div>
+            <p id="timer">Крути и выигрывай!</p>
+            <button onclick="claimBonus()">Крутить Бесплатно</button>
+        </div>
+    </div>
+
+    <div id="roulette-page" class="page">
+        <div class="game-card">
+            <h2>🔴 Европейская Рулетка</h2>
+            <div style="font-size: 50px; margin: 20px;" id="roulette-result">❓</div>
+            <input type="number" id="roulette-bet" value="500">
+            <div style="display: flex; justify-content: center;">
+                <button onclick="playRoulette('red')" style="background: #e74c3c;">КРАСНОЕ</button>
+                <button onclick="playRoulette('black')" style="background: #2c3e50;">ЧЕРНОЕ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="blackjack-page" class="page">
+        <div class="game-card">
+            <h2>🃏 Игра 21 (Blackjack)</h2>
+            <div id="bj-area" style="margin-bottom: 15px; font-size: 18px;">
+                <div id="dealer-hand">Дилер: ?</div>
+                <div id="player-hand">Вы: ?</div>
+            </div>
+            <input type="number" id="bj-bet" value="1000">
+            <div id="bj-controls">
+                <button onclick="startBJ()">Начать игру</button>
+            </div>
+            <div id="bj-actions" style="display:none">
+                <button onclick="bjAction('hit')">Еще</button>
+                <button onclick="bjAction('stand')" style="background: #27ae60;">Хватит</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="showPage('wheel-page', this)">🎡 Колесо</div>
+        <div class="nav-item" onclick="showPage('roulette-page', this)">🔴 Рулетка</div>
+        <div class="nav-item" onclick="showPage('blackjack-page', this)">🃏 21</div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        
-        // В реальном приложении лучше использовать ngrok URL вашего сервера
-        const API_URL = "https://matchbook-ecosystem-mutt.ngrok-free.dev"; 
-        // Если тестируете локально в браузере, используйте http://127.0.0.1:4040
-        const BASE_URL = "http://127.0.0.1:5500"; 
-
+        // ВАЖНО: Замени на свой актуальный ngrok URL
+        const BASE_URL = "https://matchbook-ecosystem-mutt.ngrok-free.dev"; 
         const userId = tg.initDataUnsafe.user?.id || 12345;
 
-        async function updateUI() {
-            try {
-                const response = await fetch(`${BASE_URL}/get_balance?user_id=${userId}`);
-                const data = await response.json();
-                document.getElementById('user-balance').innerText = data.balance;
-            } catch (e) { console.error("Ошибка обновления баланса"); }
+        function showPage(pageId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            el.classList.add('active');
         }
 
-        async function playRoulette(type) {
-            const betInput = document.getElementById('roulette-bet');
-            const bet = parseInt(betInput.value);
-
-            const response = await fetch(`${BASE_URL}/play_roulette`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: userId, bet: bet, type: type })
-            });
-            
-            const data = await response.json();
-            if (response.ok) {
-                alert(`Выпало: ${data.number}. ${data.win > 0 ? 'Победа! +' + data.win : 'Проигрыш'}`);
-            } else {
-                alert(data.error || "Ошибка");
-            }
-            updateUI();
+        async function updateUI() {
+            const r = await fetch(`${BASE_URL}/get_balance?user_id=${userId}`);
+            const d = await r.json();
+            document.getElementById('user-balance').innerText = d.balance.toLocaleString();
         }
 
         async function claimBonus() {
-            const response = await fetch(`${BASE_URL}/bonus`, {
+            const wheel = document.getElementById('wheel-visual');
+            wheel.style.transform = `rotate(${Math.random() * 360 + 1440}deg)`;
+            
+            const r = await fetch(`${BASE_URL}/bonus`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ user_id: userId })
             });
-            const data = await response.json();
-            alert(data.message);
+            const d = await r.json();
+            setTimeout(() => { alert(d.message); updateUI(); }, 3100);
+        }
+
+        async function playRoulette(type) {
+            const bet = document.getElementById('roulette-bet').value;
+            const r = await fetch(`${BASE_URL}/play_roulette`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId, bet: parseInt(bet), type: type })
+            });
+            const d = await r.json();
+            if(!r.ok) return alert(d.error);
+            
+            document.getElementById('roulette-result').innerText = d.number;
+            alert(d.win > 0 ? `Победа! +${d.win}` : "Проигрыш");
             updateUI();
+        }
+
+        // Логика Блэкджека
+        async function startBJ() {
+            const bet = document.getElementById('bj-bet').value;
+            const r = await fetch(`${BASE_URL}/bj_start`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId, bet: parseInt(bet) })
+            });
+            const d = await r.json();
+            if(!r.ok) return alert(d.error);
+            
+            updateBJ(d);
+            document.getElementById('bj-controls').style.display = 'none';
+            document.getElementById('bj-actions').style.display = 'block';
+        }
+
+        async function bjAction(action) {
+            const r = await fetch(`${BASE_URL}/bj_action`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId, action: action })
+            });
+            const d = await r.json();
+            updateBJ(d);
+            if(d.status !== 'playing') {
+                alert(d.message);
+                document.getElementById('bj-controls').style.display = 'block';
+                document.getElementById('bj-actions').style.display = 'none';
+                updateUI();
+            }
+        }
+
+        function updateBJ(d) {
+            document.getElementById('dealer-hand').innerText = `Дилер: ${d.dealer_hand.join(', ')} (${d.dealer_score})`;
+            document.getElementById('player-hand').innerText = `Вы: ${d.player_hand.join(', ')} (${d.player_score})`;
         }
 
         updateUI();

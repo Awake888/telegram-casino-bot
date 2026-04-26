@@ -441,7 +441,10 @@
         function getUserId() {
             // Способ 1: initDataUnsafe
             const fromUnsafe = tg?.initDataUnsafe?.user?.id;
-            if (fromUnsafe) return String(fromUnsafe);
+            if (fromUnsafe) {
+                alert('DEBUG user_id (способ 1): ' + fromUnsafe);
+                return String(fromUnsafe);
+            }
 
             // Способ 2: парсим initData вручную
             try {
@@ -451,14 +454,18 @@
                     const userStr = params.get('user');
                     if (userStr) {
                         const user = JSON.parse(decodeURIComponent(userStr));
-                        if (user?.id) return String(user.id);
+                        if (user?.id) {
+                            alert('DEBUG user_id (способ 2): ' + user.id);
+                            return String(user.id);
+                        }
                     }
                 }
             } catch(e) {}
 
-            // Fallback только для локального тестирования
-            console.warn('Telegram user_id не найден!');
-            return 'guest_' + Math.random().toString(36).slice(2, 8);
+            // Fallback
+            const guestId = 'guest_' + Math.random().toString(36).slice(2, 8);
+            alert('DEBUG: user_id не найден! initData=' + (tg?.initData ? 'есть' : 'нет') + ' unsafe=' + JSON.stringify(tg?.initDataUnsafe) + ' FALLBACK=' + guestId);
+            return guestId;
         }
 
         // ==============================

@@ -433,18 +433,32 @@
         // ==============================
         // TELEGRAM INIT
         // ==============================
-        let tg = window.Telegram?.WebApp;
-        if (tg) tg.expand();
+        const tg = window.Telegram?.WebApp;
+        if (tg) { tg.ready(); tg.expand(); }
 
-        // Ждём готовности Telegram перед получением user_id
         let userId = null;
 
         function getUserId() {
-            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
-                return tg.initDataUnsafe.user.id;
-            }
-            // Fallback для тестирования в браузере
-            return 12345;
+            // Способ 1: initDataUnsafe
+            const fromUnsafe = tg?.initDataUnsafe?.user?.id;
+            if (fromUnsafe) return String(fromUnsafe);
+
+            // Способ 2: парсим initData вручную
+            try {
+                const initData = tg?.initData;
+                if (initData) {
+                    const params = new URLSearchParams(initData);
+                    const userStr = params.get('user');
+                    if (userStr) {
+                        const user = JSON.parse(decodeURIComponent(userStr));
+                        if (user?.id) return String(user.id);
+                    }
+                }
+            } catch(e) {}
+
+            // Fallback только для локального тестирования
+            console.warn('Telegram user_id не найден!');
+            return 'guest_' + Math.random().toString(36).slice(2, 8);
         }
 
         // ==============================
@@ -759,16 +773,13 @@
         // ==============================
         // INIT
         // ==============================
-        // Ждём ready от Telegram (или сразу запускаем в браузере)
-        if (tg && tg.ready) {
-            tg.ready();
-        }
+        // tg.ready() уже вызван выше при инициализации.
+        // initData доступна сразу после ready(), задержка не нужна.
+        userId = getUserId();
+        updateUI();
 
-        // Небольшая задержка — чтобы Telegram успел передать initData
-        setTimeout(() => {
-            userId = getUserId();
-            updateUI();
-        }, 300);
+        // Показываем user_id в консоли для отладки
+        console.log('Telegram user_id:', userId);
 
         setInterval(updateUI, 10000);
     </script>

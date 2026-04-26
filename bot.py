@@ -4,12 +4,12 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
-# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
+# Твой токен
 TOKEN = "8648883883:AAF-Js6d3ZKgYBGdroYOXuK2PpSDz9wejHc"
-# Убедись, что APP_URL ведет на твой index.html
-APP_URL = "https://matchbook-ecosystem-mutt.ngrok-free.dev"
+# Твоя ссылка на GitHub Pages (уже вставлена корректно)
+APP_URL = "https://awake888.github.io/telegram-casino-bot/"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -30,7 +30,7 @@ async def start_handler(message: types.Message):
     )
 
 async def main():
-    print("Бот запущен...")
+    print("Бот запущен и готов к работе!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

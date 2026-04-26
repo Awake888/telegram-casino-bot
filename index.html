@@ -477,7 +477,7 @@
         async function updateUI() {
             const uid = getUserId();
             try {
-                const r = await api(`/get_balance?user_id=${uid}`);
+                const r = await api(`/get_balance?user_id=${uid}&_=${Date.now()}`);
                 if (!r.ok) throw new Error('server error');
                 const d = await r.json();
                 document.getElementById('user-balance').innerText = d.balance.toLocaleString('ru-RU');
@@ -574,9 +574,16 @@
                 return;
             }
 
-            // Запускаем анимацию колеса
+            // Запускаем анимацию колеса точно на выигрышный сектор
             const wheel = document.getElementById('wheel-canvas');
-            const extraDeg = Math.floor(Math.random() * 360) + 1800; // минимум 5 кругов
+            const sectorIndex = serverData.sector_index; // индекс сектора от сервера
+            const sectorAngle = 360 / WHEEL_SECTORS.length;
+            // Угол нужного сектора (стрелка сверху — вычитаем половину сектора для центра)
+            const targetAngle = sectorIndex * sectorAngle + sectorAngle / 2;
+            // Добавляем 5 полных оборотов + поворот до нужного сектора
+            const fullSpins = 1800; // 5 * 360
+            const normalizedCurrent = currentRotation % 360;
+            const extraDeg = fullSpins + (360 - normalizedCurrent + (360 - targetAngle)) % 360;
             currentRotation += extraDeg;
             wheel.style.transform = `rotate(${currentRotation}deg)`;
 

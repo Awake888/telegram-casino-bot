@@ -12,23 +12,17 @@
         .page { display: none; padding: 20px; animation: fadeIn 0.3s; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
         .game-card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid #444; }
         button { background: #0088cc; color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; margin: 5px; transition: 0.2s; }
         button:active { transform: scale(0.95); }
         input { background: #333; color: white; border: 1px solid #555; padding: 10px; border-radius: 8px; width: 80%; margin-bottom: 15px; text-align: center; }
-
-        /* Навигация */
         .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #444; }
         .nav-item { color: #888; font-size: 12px; cursor: pointer; }
         .nav-item.active { color: var(--accent); }
-
-        /* Визуал Колеса */
         .wheel-container { width: 200px; height: 200px; border: 5px solid var(--accent); border-radius: 50%; margin: 20px auto; position: relative; transition: transform 3s cubic-bezier(0.1, 0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 40px; background: repeating-conic-gradient(from 0deg, #e74c3c 0deg 30deg, #2c3e50 30deg 60deg); }
     </style>
 </head>
 <body>
-
     <div class="header">
         <div class="balance">💰 <span id="user-balance">0</span></div>
     </div>
@@ -37,14 +31,13 @@
         <div class="game-card">
             <h2>🎡 Колесо Удачи</h2>
             <div id="wheel-visual" class="wheel-container">🎁</div>
-            <p id="timer">Крути и выигрывай!</p>
             <button onclick="claimBonus()">Крутить Бесплатно</button>
         </div>
     </div>
 
     <div id="roulette-page" class="page">
         <div class="game-card">
-            <h2>🔴 Европейская Рулетка</h2>
+            <h2>🔴 Рулетка</h2>
             <div style="font-size: 50px; margin: 20px;" id="roulette-result">❓</div>
             <input type="number" id="roulette-bet" value="500">
             <div style="display: flex; justify-content: center;">
@@ -56,15 +49,13 @@
 
     <div id="blackjack-page" class="page">
         <div class="game-card">
-            <h2>🃏 Игра 21 (Blackjack)</h2>
-            <div id="bj-area" style="margin-bottom: 15px; font-size: 18px;">
+            <h2>🃏 Игра 21</h2>
+            <div id="bj-area" style="margin-bottom: 15px;">
                 <div id="dealer-hand">Дилер: ?</div>
                 <div id="player-hand">Вы: ?</div>
             </div>
             <input type="number" id="bj-bet" value="1000">
-            <div id="bj-controls">
-                <button onclick="startBJ()">Начать игру</button>
-            </div>
+            <div id="bj-controls"><button onclick="startBJ()">Начать игру</button></div>
             <div id="bj-actions" style="display:none">
                 <button onclick="bjAction('hit')">Еще</button>
                 <button onclick="bjAction('stand')" style="background: #27ae60;">Хватит</button>
@@ -81,7 +72,6 @@
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        // ВАЖНО: Замени на свой актуальный ngrok URL
         const BASE_URL = "https://matchbook-ecosystem-mutt.ngrok-free.dev"; 
         const userId = tg.initDataUnsafe.user?.id || 12345;
 
@@ -93,15 +83,16 @@
         }
 
         async function updateUI() {
-            const r = await fetch(`${BASE_URL}/get_balance?user_id=${userId}`);
-            const d = await r.json();
-            document.getElementById('user-balance').innerText = d.balance.toLocaleString();
+            try {
+                const r = await fetch(`${BASE_URL}/get_balance?user_id=${userId}`);
+                const d = await r.json();
+                document.getElementById('user-balance').innerText = d.balance.toLocaleString();
+            } catch(e) { console.error("Ошибка связи"); }
         }
 
         async function claimBonus() {
             const wheel = document.getElementById('wheel-visual');
-            wheel.style.transform = `rotate(${Math.random() * 360 + 1440}deg)`;
-            
+            wheel.style.transform = `rotate(${Math.floor(Math.random() * 360) + 1440}deg)`;
             const r = await fetch(`${BASE_URL}/bonus`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -120,13 +111,11 @@
             });
             const d = await r.json();
             if(!r.ok) return alert(d.error);
-            
             document.getElementById('roulette-result').innerText = d.number;
-            alert(d.win > 0 ? `Победа! +${d.win}` : "Проигрыш");
+            alert(d.win > 0 ? `Выпало ${d.number}. Победа! +${d.win}` : `Выпало ${d.number}. Проигрыш`);
             updateUI();
         }
 
-        // Логика Блэкджека
         async function startBJ() {
             const bet = document.getElementById('bj-bet').value;
             const r = await fetch(`${BASE_URL}/bj_start`, {
@@ -136,7 +125,6 @@
             });
             const d = await r.json();
             if(!r.ok) return alert(d.error);
-            
             updateBJ(d);
             document.getElementById('bj-controls').style.display = 'none';
             document.getElementById('bj-actions').style.display = 'block';

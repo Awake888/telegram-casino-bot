@@ -416,6 +416,14 @@
         // ==============================
         const BASE_URL = "https://matchbook-ecosystem-mutt.ngrok-free.dev";
 
+// ТЕСТ — удали после проверки
+setTimeout(() => {
+    fetch(`${BASE_URL}/get_balance?user_id=12345`)
+        .then(r => r.json())
+        .then(d => alert('ТЕСТ: ' + JSON.stringify(d)))
+        .catch(e => alert('ОШИБКА: ' + e.message));
+}, 500);
+
         // ==============================
         // TELEGRAM INIT
         // ==============================

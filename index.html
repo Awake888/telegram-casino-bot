@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; }
+        .game-card { background: #2c2c2c; border-radius: 15px; padding: 15px; margin-bottom: 10px; border: 1px solid #444; }
+        button { background: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
+        .balance { font-size: 24px; color: #f1c40f; margin-bottom: 20px; }
+        input { padding: 8px; border-radius: 5px; border: none; margin-bottom: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="balance">Баланс: <span id="user-balance">...</span> 🪙</div>
+
+    <div class="game-card">
+        <h3>🎰 Колесо Фортуны</h3>
+        <p id="timer">Раз в 2 часа</p>
+        <button onclick="claimBonus()">Получить бонус</button>
+    </div>
+
+    <div class="game-card">
+        <h3>🔴 Рулетка</h3>
+        <input type="number" id="roulette-bet" value="100" min="1"> <br>
+        <button onclick="playRoulette('red')" style="background: #e74c3c;">Красное (x2)</button>
+        <button onclick="playRoulette('black')" style="background: #2c3e50;">Черное (x2)</button>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        // В реальном приложении лучше использовать ngrok URL вашего сервера
+        const API_URL = "https://matchbook-ecosystem-mutt.ngrok-free.dev"; 
+        // Если тестируете локально в браузере, используйте http://127.0.0.1:4040
+        const BASE_URL = "http://127.0.0.1:5500"; 
+
+        const userId = tg.initDataUnsafe.user?.id || 12345;
+
+        async function updateUI() {
+            try {
+                const response = await fetch(`${BASE_URL}/get_balance?user_id=${userId}`);
+                const data = await response.json();
+                document.getElementById('user-balance').innerText = data.balance;
+            } catch (e) { console.error("Ошибка обновления баланса"); }
+        }
+
+        async function playRoulette(type) {
+            const betInput = document.getElementById('roulette-bet');
+            const bet = parseInt(betInput.value);
+
+            const response = await fetch(`${BASE_URL}/play_roulette`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId, bet: bet, type: type })
+            });
+            
+            const data = await response.json();
+            if (response.ok) {
+                alert(`Выпало: ${data.number}. ${data.win > 0 ? 'Победа! +' + data.win : 'Проигрыш'}`);
+            } else {
+                alert(data.error || "Ошибка");
+            }
+            updateUI();
+        }
+
+        async function claimBonus() {
+            const response = await fetch(`${BASE_URL}/bonus`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: userId })
+            });
+            const data = await response.json();
+            alert(data.message);
+            updateUI();
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

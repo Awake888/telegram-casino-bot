@@ -4,6 +4,9 @@ import sqlite3
 import aiohttp_cors
 import time
 
+# Хранилище активных игр 21
+active_games = {}
+
 def init_db():
     conn = sqlite3.connect('casino.db')
     cursor = conn.cursor()
@@ -18,9 +21,10 @@ async def get_balance(request):
     cursor.execute('SELECT balance FROM users WHERE id = ?', (user_id,))
     row = cursor.fetchone()
     if not row:
-        cursor.execute('INSERT INTO users VALUES (?, 1000, 0)', (user_id,))
+        # УСТАНОВИЛИ 15,000 МОНЕТ ПРИ РЕГИСТРАЦИИ
+        cursor.execute('INSERT INTO users VALUES (?, 15000, 0)', (user_id,))
         conn.commit()
-        balance = 1000
+        balance = 15000
     else:
         balance = row[0]
     conn.close()
@@ -28,69 +32,129 @@ async def get_balance(request):
 
 async def play_roulette(request):
     data = await request.json()
-    user_id = data['user_id']
-    bet = int(data['bet'])
-    bet_type = data['type']
+    user_id, bet, bet_type = data['user_id'], int(data['bet']), data['type']
     
     conn = sqlite3.connect('casino.db')
     cursor = conn.cursor()
-    
-    # Проверка баланса
     cursor.execute('SELECT balance FROM users WHERE id = ?', (user_id,))
-    current_balance = cursor.fetchone()[0]
+    balance = cursor.fetchone()[0]
     
-    if bet > current_balance or bet <= 0:
-        return web.json_response({'error': 'Недостаточно средств'}, status=400)
+    if bet > balance or bet <= 0:
+        return web.json_response({'error': 'Недостаточно монет!'}, status=400)
 
     number = random.randint(0, 36)
-    red_nums = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
-    is_red = number in red_nums
+    is_red = number in [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
+    win = bet * 2 if (bet_type == 'red' and is_red and number != 0) or (bet_type == 'black' and not is_red and number != 0) else 0
     
-    win = 0
-    if (bet_type == 'red' and is_red and number != 0) or \
-       (bet_type == 'black' and not is_red and number != 0):
-        win = bet * 2
-    
-    new_balance = current_balance - bet + win
-    cursor.execute('UPDATE users SET balance = ? WHERE id = ?', (new_balance, user_id))
+    cursor.execute('UPDATE users SET balance = balance - ? + ? WHERE id = ?', (bet, win, user_id))
     conn.commit()
     conn.close()
     return web.json_response({'number': number, 'win': win})
 
-async def claim_bonus(request):
+# ЛОГИКА 21 (BLACKJACK)
+def get_card():
+    cards = [2,3,4,5,6,7,8,9,10,10,10,10,11]
+    return random.choice(cards)
+
+def calculate_score(hand):
+    score = sum(hand)
+    if score > 21 and 11 in hand:
+        score -= 10
+    return score
+
+async def bj_start(request):
     data = await request.json()
-    user_id = data['user_id']
-    now = int(time.time())
+    user_id, bet = data['user_id'], int(data['bet'])
     
     conn = sqlite3.connect('casino.db')
     cursor = conn.cursor()
-    cursor.execute('SELECT last_bonus FROM users WHERE id = ?', (user_id,))
-    row = cursor.fetchone()
+    cursor.execute('SELECT balance FROM users WHERE id = ?', (user_id,))
+    balance = cursor.fetchone()[0]
     
-    # Кулдаун 2 часа (7200 секунд)
-    if row and (now - row[0]) < 7200:
-        conn.close()
-        return web.json_response({'message': 'Бонус еще не готов!'}, status=400)
+    if bet > balance or bet <= 0:
+        return web.json_response({'error': 'Мало монет!'}, status=400)
+    
+    game = {
+        'bet': bet,
+        'player_hand': [get_card(), get_card()],
+        'dealer_hand': [get_card()],
+        'status': 'playing'
+    }
+    active_games[user_id] = game
+    return web.json_response({
+        'player_hand': game['player_hand'], 'player_score': calculate_score(game['player_hand']),
+        'dealer_hand': game['dealer_hand'], 'dealer_score': calculate_score(game['dealer_hand']),
+        'status': 'playing'
+    })
+
+async def bj_action(request):
+    data = await request.json()
+    user_id, action = data['user_id'], data['action']
+    game = active_games.get(user_id)
+    
+    if not game: return web.json_response({'error': 'Нет активной игры'}, status=400)
+    
+    if action == 'hit':
+        game['player_hand'].append(get_card())
+        if calculate_score(game['player_hand']) > 21:
+            return await end_bj(user_id, 'lose', 'Перебор! Вы проиграли.')
+    
+    elif action == 'stand':
+        while calculate_score(game['dealer_hand']) < 17:
+            game['dealer_hand'].append(get_card())
         
-    bonus_amount = 500
-    cursor.execute('UPDATE users SET balance = balance + ?, last_bonus = ? WHERE id = ?', (bonus_amount, now, user_id))
+        p_score = calculate_score(game['player_hand'])
+        d_score = calculate_score(game['dealer_hand'])
+        
+        if d_score > 21 or p_score > d_score:
+            return await end_bj(user_id, 'win', 'Вы победили!')
+        elif p_score < d_score:
+            return await end_bj(user_id, 'lose', 'Дилер победил.')
+        else:
+            return await end_bj(user_id, 'draw', 'Ничья!')
+
+    return web.json_response({
+        'player_hand': game['player_hand'], 'player_score': calculate_score(game['player_hand']),
+        'dealer_hand': game['dealer_hand'], 'dealer_score': calculate_score(game['dealer_hand']),
+        'status': 'playing'
+    })
+
+async def end_bj(user_id, result, msg):
+    game = active_games.pop(user_id)
+    win_amount = game['bet'] * 2 if result == 'win' else (game['bet'] if result == 'draw' else 0)
+    
+    conn = sqlite3.connect('casino.db')
+    cursor = conn.cursor()
+    cursor.execute('UPDATE users SET balance = balance - ? + ? WHERE id = ?', (game['bet'], win_amount, user_id))
     conn.commit()
     conn.close()
-    return web.json_response({'message': f'Вы получили {bonus_amount} монет!'})
+    
+    return web.json_response({
+        'player_hand': game['player_hand'], 'player_score': calculate_score(game['player_hand']),
+        'dealer_hand': game['dealer_hand'], 'dealer_score': calculate_score(game['dealer_hand']),
+        'status': result, 'message': msg
+    })
+
+async def claim_bonus(request):
+    data = await request.json()
+    user_id = data['user_id']
+    conn = sqlite3.connect('casino.db')
+    cursor = conn.cursor()
+    cursor.execute('UPDATE users SET balance = balance + 5000 WHERE id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+    return web.json_response({'message': 'Бонус 5000 монет зачислен!'})
 
 app = web.Application()
-cors = aiohttp_cors.setup(app, defaults={
-    "*": aiohttp_cors.ResourceOptions(allow_credentials=True, expose_headers="*", allow_headers="*")
-})
-
+cors = aiohttp_cors.setup(app, defaults={"*": aiohttp_cors.ResourceOptions(allow_credentials=True, expose_headers="*", allow_headers="*")})
 app.router.add_get('/get_balance', get_balance)
 app.router.add_post('/play_roulette', play_roulette)
 app.router.add_post('/bonus', claim_bonus)
+app.router.add_post('/bj_start', bj_start)
+app.router.add_post('/bj_action', bj_action)
 
-for route in list(app.router.routes()):
-    cors.add(route)
+for route in list(app.router.routes()): cors.add(route)
 
 if __name__ == '__main__':
     init_db()
-    print("Сервер запущен на порту 4040...")
     web.run_app(app, port=4040)

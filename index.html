@@ -135,10 +135,11 @@
 <div id="roulette-page" class="page">
     <div class="game-card">
         <div class="game-title">🔴 Рулетка</div>
+        <!-- История -->
+        <div id="rl-history" style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;min-height:24px;"></div>
         <div class="rl-wrap" id="rl-wrap">
             <div class="rl-ptr">▼</div>
             <svg id="rl-svg" class="rl-svg" viewBox="0 0 200 200"></svg>
-            <div class="rl-ball" id="rl-ball"></div>
         </div>
         <div class="rl-num" id="rl-num">—</div>
         <input type="number" class="bet-input" id="roulette-bet" value="500" min="1">
@@ -371,7 +372,7 @@ function playRouletteNumber(){
     playRoulette('number:'+rlSelectedNum);
 }
 
-let rlAngle=0,rlSpinning=false;
+let rlAngle=0,rlSpinning=false,rlHistory=[];
 async function playRoulette(type){
     if(rlSpinning)return;
     const uid=getUserId(),bet=parseInt(document.getElementById('roulette-bet').value);
@@ -389,30 +390,23 @@ async function playRoulette(type){
     const svg=document.getElementById('rl-svg');
     svg.style.transition='transform 5s cubic-bezier(.15,0,.1,1)';
     svg.style.transform=`rotate(${rlAngle}deg)`;
-    animateBall(5000,()=>{
+    setTimeout(()=>{
         const isRed=RED_SET.has(num);
         const col=num===0?'#2ecc71':isRed?'#e74c3c':'#aaa';
         const el=document.getElementById('rl-num');el.textContent=num;el.style.color=col;
+        // Добавляем в историю
+        rlHistory.unshift({num,col});if(rlHistory.length>12)rlHistory.pop();
+        renderRlHistory();
         updateUI();
         if(d.win>0)showToast(`🏆 Победа! +${d.win.toLocaleString('ru-RU')} монет`,'win');
         else showToast('💸 Не повезло...','lose');
         rlSpinning=false;
-    });
+    },5100);
 }
-function animateBall(dur,onDone){
-    const ball=document.getElementById('rl-ball'),wrap=document.getElementById('rl-wrap');
-    const tw=wrap.offsetWidth||260,cx=tw/2,cy=tw/2,r=tw/2-9;
-    ball.style.display='block';
-    let start=null,ba=0;
-    function step(ts){
-        if(!start)start=ts;
-        const prog=Math.min((ts-start)/dur,1),spd=(1-prog)*.05+.003;
-        ba+=spd*60;
-        ball.style.left=(cx+r*Math.cos(ba)-6)+'px';ball.style.top=(cy+r*Math.sin(ba)-6)+'px';
-        if(prog<1)requestAnimationFrame(step);
-        else{ball.style.display='none';if(onDone)onDone();}
-    }
-    requestAnimationFrame(step);
+
+function renderRlHistory(){
+    const el=document.getElementById('rl-history');
+    el.innerHTML=rlHistory.map(h=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:${h.num===0?'#1a7a3a':RED_SET.has(h.num)?'#8b1a1a':'#1a1a2e'};border:2px solid ${h.col};font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;color:${h.col}">${h.num}</span>`).join('');
 }
 
 /* ===== BLACKJACK ===== */
@@ -498,16 +492,18 @@ function avStartCountdown(){
     document.getElementById('av-btn-cashout').style.display='none';
     document.getElementById('av-countdown').textContent=avCdSec;
     document.getElementById('av-status').textContent='Принимаются ставки!';
-    // Сбрасываем самолёт
     const plane=document.getElementById('av-plane');
     plane.style.left='4%';plane.style.bottom='28px';
     avCtx.clearRect(0,0,avCv.width,avCv.height);
     avPts=[];
-
     avCrashAt=avGenCrash();
     clearInterval(avCdTimer);
-    // Авто-ставка если включена
-    if(avAutoEnabled){setTimeout(()=>avBet(),500);}
+    // Авто-ставка если включена — через 600мс чтобы UI успел обновиться
+    if(avAutoEnabled){
+        setTimeout(()=>{
+            if(avState==='countdown'&&!avBetPlaced) avBet();
+        },600);
+    }
     avCdTimer=setInterval(()=>{
         avCdSec--;
         document.getElementById('av-countdown').textContent=avCdSec;
@@ -520,11 +516,18 @@ function avStartRound(){
     document.getElementById('av-waiting-msg').style.display='none';
     document.getElementById('av-multiplier').style.display='block';
     document.getElementById('av-btn-bet').disabled=true;
-    if(avBetPlaced){
+    if(avBetPlaced&&!avCashedOut){
+        // Ставка есть, ещё не вывели — показываем ЗАБРАТЬ
         document.getElementById('av-btn-cashout').style.display='block';
         document.getElementById('av-btn-bet').style.display='none';
         document.getElementById('av-status').textContent='Самолёт летит! Забери вовремя!';
+    }else if(avBetPlaced&&avCashedOut){
+        // Уже вывели в этом раунде — просто летим
+        document.getElementById('av-btn-bet').style.display='block';
+        document.getElementById('av-btn-bet').disabled=true;
+        document.getElementById('av-status').textContent='Раунд идёт...';
     }else{
+        // Ставки нет
         document.getElementById('av-status').textContent='Раунд идёт...';
     }
     avFrame=requestAnimationFrame(avTick);

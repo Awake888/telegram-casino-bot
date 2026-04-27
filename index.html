@@ -392,22 +392,16 @@ let rlSelectedNum=null;
 })();
 
 /* ===== ROULETTE ===== */
-// Стандартный порядок числа по рядам рулеточного стола
-// Ряд 1 (верх): 3,6,9,12,15,18,21,24,27,30,33,36
-// Ряд 2 (середина): 2,5,8,11,14,17,20,23,26,29,32,35
-// Ряд 3 (низ): 1,4,7,10,13,16,19,22,25,28,31,34
-const RL_ROWS = [
-    [3,6,9,12,15,18,21,24,27,30,33,36],
-    [2,5,8,11,14,17,20,23,26,29,32,35],
-    [1,4,7,10,13,16,19,22,25,28,31,34]
-];
-const RED_SET = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
-
 function initRoulette(){
     const grid=document.getElementById('rl-grid');
     if(!grid)return;
     grid.innerHTML='';
-    RL_ROWS.forEach(row=>{
+    const rows=[
+        [3,6,9,12,15,18,21,24,27,30,33,36],
+        [2,5,8,11,14,17,20,23,26,29,32,35],
+        [1,4,7,10,13,16,19,22,25,28,31,34]
+    ];
+    rows.forEach(row=>{
         row.forEach(num=>{
             const isRed=RED_SET.has(num);
             const cell=document.createElement('div');
@@ -426,11 +420,6 @@ function highlightResult(num){
         if(parseInt(c.dataset.num)===num)c.classList.add('highlighted');
     });
     setTimeout(()=>document.querySelectorAll('.rl-nc').forEach(c=>c.classList.remove('highlighted')),4000);
-}
-        c.classList.remove('highlighted');
-        if(parseInt(c.dataset.num)===num) c.classList.add('highlighted');
-    });
-    setTimeout(()=>document.querySelectorAll('.rl-num-cell').forEach(c=>c.classList.remove('highlighted')),4000);
 }
 
 let rlSpinning=false, rlHistory=[];

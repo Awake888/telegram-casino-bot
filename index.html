@@ -81,15 +81,14 @@
         .divider{height:1px;background:#1a5c2e;margin:12px 0;}
 
         /* AVIATOR */
-        .av-screen{background:#080b14;border-radius:14px;height:200px;position:relative;overflow:hidden;margin-bottom:12px;border:1px solid #1a1f35;}
-        .av-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:32px 32px;}
-        .av-multiplier{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Unbounded',sans-serif;font-size:40px;font-weight:900;z-index:6;transition:color .3s;}
+        .av-screen{background:#080b14;border-radius:14px;height:260px;position:relative;overflow:hidden;margin-bottom:12px;border:1px solid #1a1f35;}
+        .av-multiplier{position:absolute;top:16px;left:50%;transform:translateX(-50%);font-family:'Unbounded',sans-serif;font-size:44px;font-weight:900;z-index:6;transition:color .3s;white-space:nowrap;}
         .av-multiplier.green{color:#2ecc71;}
         .av-multiplier.yellow{color:var(--accent);}
         .av-multiplier.red{color:#e74c3c;}
         .av-waiting-msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Unbounded',sans-serif;font-size:13px;color:#888;z-index:6;text-align:center;line-height:1.8;}
         .av-countdown{font-size:32px;color:var(--accent);font-weight:900;}
-        .av-crashed{position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);font-family:'Unbounded',sans-serif;font-size:14px;color:#e74c3c;font-weight:700;display:none;z-index:7;text-align:center;line-height:1.6;}
+        .av-crashed{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Unbounded',sans-serif;font-size:16px;color:#e74c3c;font-weight:700;display:none;z-index:7;text-align:center;line-height:1.8;background:rgba(0,0,0,.6);padding:12px 24px;border-radius:12px;border:1px solid #e74c3c;}
         .av-history{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;}
         .av-hist-item{font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;}
         .av-hist-item.low{background:rgba(231,76,60,.2);color:#e74c3c;}
@@ -204,9 +203,7 @@
         <div class="game-title">✈️ Авиатор</div>
         <div class="av-history" id="av-history"></div>
         <div class="av-screen" id="av-screen">
-            <div class="av-grid"></div>
             <canvas id="av-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:3;"></canvas>
-            <div style="position:absolute;font-size:24px;z-index:5;left:4%;bottom:28px;" id="av-plane">✈️</div>
             <div class="av-multiplier green" id="av-multiplier" style="display:none;">1.00x</div>
             <div class="av-waiting-msg" id="av-waiting-msg">
                 <div>Принимаются ставки</div>
@@ -450,9 +447,9 @@ async function bjAction(action){
 }
 
 /* ===== AVIATOR ===== */
-let avState='countdown', // countdown | flying | crashed
+let avState='countdown',
     avMul=1.0,avCrashAt=1.0,avBetAmt=0,avBetPlaced=false,avCashedOut=false,
-    avFrame=null,avHistory=[],avPts=[],avT0=null,avCv=null,avCtx=null,avCdTimer=null,avCdSec=10,
+    avFrame=null,avHistory=[],avPts=[],avRawPts=[],avT0=null,avCv=null,avCtx=null,avCdTimer=null,avCdSec=10,
     avAutoEnabled=false,avAutoMul=2.0;
 
 function avToggleAuto(){
@@ -477,7 +474,113 @@ function avToggleAuto(){
 
 function avInit(){
     avCv=document.getElementById('av-canvas');avCtx=avCv.getContext('2d');
-    const s=document.getElementById('av-screen');avCv.width=s.offsetWidth;avCv.height=s.offsetHeight;
+    const s=document.getElementById('av-screen');
+    avCv.width=s.offsetWidth||320;avCv.height=s.offsetHeight||260;
+}
+
+function avDrawFrame(mul, crashed, cashedOut){
+    const W=avCv.width, H=avCv.height;
+    const PAD_L=48, PAD_B=36, PAD_T=60, PAD_R=20;
+    const cW=W-PAD_L-PAD_R, cH=H-PAD_T-PAD_B;
+    avCtx.clearRect(0,0,W,H);
+
+    // Фон
+    avCtx.fillStyle='#080b14';
+    avCtx.fillRect(0,0,W,H);
+
+    // Сетка
+    avCtx.strokeStyle='rgba(255,255,255,0.04)';
+    avCtx.lineWidth=1;
+    for(let i=0;i<=4;i++){
+        const y=PAD_T+cH*(i/4);
+        avCtx.beginPath();avCtx.moveTo(PAD_L,y);avCtx.lineTo(W-PAD_R,y);avCtx.stroke();
+    }
+    for(let i=0;i<=4;i++){
+        const x=PAD_L+cW*(i/4);
+        avCtx.beginPath();avCtx.moveTo(x,PAD_T);avCtx.lineTo(x,PAD_T+cH);avCtx.stroke();
+    }
+
+    // Оси
+    avCtx.strokeStyle='rgba(255,255,255,0.15)';avCtx.lineWidth=1.5;
+    avCtx.beginPath();avCtx.moveTo(PAD_L,PAD_T);avCtx.lineTo(PAD_L,PAD_T+cH);avCtx.lineTo(W-PAD_R,PAD_T+cH);avCtx.stroke();
+
+    // Метки по Y (множители)
+    avCtx.fillStyle='rgba(255,255,255,0.3)';avCtx.font='bold 9px Inter,sans-serif';avCtx.textAlign='right';
+    const yLabels=[1,1.5,2,3,5];
+    yLabels.forEach(v=>{
+        const frac=Math.min((v-1)/(Math.max(mul,2)-1+0.01),1);
+        const y=PAD_T+cH*(1-frac);
+        avCtx.fillText(v+'x',PAD_L-5,y+3);
+        avCtx.strokeStyle='rgba(255,255,255,0.07)';avCtx.lineWidth=0.5;
+        avCtx.beginPath();avCtx.moveTo(PAD_L,y);avCtx.lineTo(W-PAD_R,y);avCtx.stroke();
+    });
+
+    if(avPts.length<2)return;
+
+    // Цвет линии
+    const lineColor = crashed?'#e74c3c': cashedOut?'#2ecc71':'#e74c3c';
+    const glowColor = crashed?'rgba(231,76,60,0.3)': cashedOut?'rgba(46,204,113,0.3)':'rgba(231,76,60,0.3)';
+
+    // Заливка под кривой
+    avCtx.beginPath();
+    avCtx.moveTo(avPts[0].cx, PAD_T+cH);
+    avPts.forEach(p=>avCtx.lineTo(p.cx,p.cy));
+    avCtx.lineTo(avPts[avPts.length-1].cx, PAD_T+cH);
+    avCtx.closePath();
+    const grad=avCtx.createLinearGradient(0,PAD_T,0,PAD_T+cH);
+    grad.addColorStop(0, cashedOut?'rgba(46,204,113,0.25)':'rgba(231,76,60,0.2)');
+    grad.addColorStop(1,'rgba(0,0,0,0)');
+    avCtx.fillStyle=grad;avCtx.fill();
+
+    // Линия кривой — свечение
+    avCtx.shadowColor=glowColor;avCtx.shadowBlur=12;
+    avCtx.beginPath();avCtx.moveTo(avPts[0].cx,avPts[0].cy);
+    avPts.forEach(p=>avCtx.lineTo(p.cx,p.cy));
+    avCtx.strokeStyle=lineColor;avCtx.lineWidth=3;avCtx.lineJoin='round';avCtx.stroke();
+    avCtx.shadowBlur=0;
+
+    // Точка на конце
+    if(!crashed){
+        const last=avPts[avPts.length-1];
+        avCtx.beginPath();avCtx.arc(last.cx,last.cy,5,0,Math.PI*2);
+        avCtx.fillStyle=lineColor;avCtx.fill();
+        avCtx.shadowColor=glowColor;avCtx.shadowBlur=15;
+        avCtx.beginPath();avCtx.arc(last.cx,last.cy,3,0,Math.PI*2);
+        avCtx.fillStyle='white';avCtx.fill();
+        avCtx.shadowBlur=0;
+
+        // Самолётик на кончике
+        const prev=avPts.length>1?avPts[avPts.length-2]:avPts[0];
+        const angle=Math.atan2(last.cy-prev.cy, last.cx-prev.cx);
+        avCtx.save();
+        avCtx.translate(last.cx, last.cy);
+        avCtx.rotate(angle);
+        avCtx.font='22px serif';
+        avCtx.textAlign='center';avCtx.textBaseline='middle';
+        avCtx.fillText('✈️',-4,-4);
+        avCtx.restore();
+    }
+}
+
+function avPtsFromTime(elapsed, mul){
+    // Пересчитываем все точки кривой под текущий масштаб
+    const W=avCv.width, H=avCv.height;
+    const PAD_L=48, PAD_B=36, PAD_T=60, PAD_R=20;
+    const cW=W-PAD_L-PAD_R, cH=H-PAD_T-PAD_B;
+    const maxMul=Math.max(mul*1.15, 2);
+    const pts=[];
+    const steps=Math.min(avRawPts.length,200);
+    const skip=Math.max(1,Math.floor(avRawPts.length/steps));
+    for(let i=0;i<avRawPts.length;i+=skip){
+        const p=avRawPts[i];
+        const fx=p.t/Math.max(elapsed,0.1);
+        const fy=(p.m-1)/(maxMul-1);
+        pts.push({
+            cx: PAD_L+fx*cW,
+            cy: PAD_T+cH*(1-Math.min(fy,1))
+        });
+    }
+    return pts;
 }
 function avGenCrash(){
     const r=Math.random();
@@ -498,17 +601,12 @@ function avStartCountdown(){
     document.getElementById('av-btn-cashout').style.display='none';
     document.getElementById('av-countdown').textContent=avCdSec;
     document.getElementById('av-status').textContent='Принимаются ставки!';
-    const plane=document.getElementById('av-plane');
-    plane.style.left='4%';plane.style.bottom='28px';
     avCtx.clearRect(0,0,avCv.width,avCv.height);
-    avPts=[];
+    avPts=[];avRawPts=[];
     avCrashAt=avGenCrash();
     clearInterval(avCdTimer);
-    // Авто-ставка если включена — через 600мс чтобы UI успел обновиться
     if(avAutoEnabled){
-        setTimeout(()=>{
-            if(avState==='countdown'&&!avBetPlaced) avBet();
-        },600);
+        setTimeout(()=>{if(avState==='countdown'&&!avBetPlaced)avBet();},600);
     }
     avCdTimer=setInterval(()=>{
         avCdSec--;
@@ -543,31 +641,24 @@ function avTick(ts){
     if(!avT0)avT0=ts;
     const el=(ts-avT0)/1000;
     avMul=Math.pow(Math.E,el*.22);
+
+    // Накапливаем сырые точки (время + множитель)
+    avRawPts.push({t:el, m:avMul});
+
+    // Пересчитываем экранные точки под текущий масштаб
+    avPts=avPtsFromTime(el, avMul);
+
     const mEl=document.getElementById('av-multiplier');
-    // Если уже вывели — показываем множитель вывода (замороженный), не обновляем
     if(!avCashedOut){
         mEl.textContent=avMul.toFixed(2)+'x';
         mEl.className='av-multiplier '+(avMul<2?'green':avMul<5?'yellow':'red');
     }
-    const sw=avCv.width,sh=avCv.height;
-    const px=Math.min(el/18,.88),py=Math.min(el/18,.82);
-    const planeL=sw*.04+px*sw*.85,planeB=28+py*(sh-55);
-    const plane=document.getElementById('av-plane');
-    plane.style.left=planeL+'px';plane.style.bottom=planeB+'px';
-    avPts.push({x:planeL+12,y:sh-planeB-12});
-    avCtx.clearRect(0,0,sw,sh);
-    if(avPts.length>1){
-        avCtx.beginPath();avCtx.moveTo(avPts[0].x,avPts[0].y);
-        for(let i=1;i<avPts.length;i++)avCtx.lineTo(avPts[i].x,avPts[i].y);
-        // Зелёная линия если уже вывели
-        avCtx.strokeStyle=avCashedOut?'#2ecc71':'#e74c3c';avCtx.lineWidth=2.5;avCtx.stroke();
-        avCtx.lineTo(avPts[avPts.length-1].x,sh);avCtx.lineTo(avPts[0].x,sh);
-        avCtx.closePath();avCtx.fillStyle=avCashedOut?'rgba(46,204,113,.08)':'rgba(231,76,60,.08)';avCtx.fill();
-    }
+
+    avDrawFrame(avMul, false, avCashedOut);
+
     // Авто-вывод
     if(avAutoEnabled&&avBetPlaced&&!avCashedOut&&avMul>=avAutoMul){
         avCashout();
-        // НЕ делаем return — продолжаем анимацию до краша
     }
     if(avMul>=avCrashAt){avCrash();return;}
     avFrame=requestAnimationFrame(avTick);
@@ -575,6 +666,8 @@ function avTick(ts){
 
 function avCrash(){
     cancelAnimationFrame(avFrame);avState='crashed';
+    // Рисуем финальный кадр красным
+    avDrawFrame(avMul, true, avCashedOut);
     document.getElementById('av-multiplier').style.display='none';
     document.getElementById('av-crashed').style.display='block';
     document.getElementById('av-crash-val').textContent=avCrashAt.toFixed(2)+'x';
@@ -583,11 +676,9 @@ function avCrash(){
     if(avBetPlaced&&!avCashedOut){
         showToast(`💥 Улетел на ${avCrashAt.toFixed(2)}x!`,'lose');updateUI();
     }
-    // Всегда сбрасываем кнопки при краше
     document.getElementById('av-btn-cashout').style.display='none';
     document.getElementById('av-btn-bet').style.display='block';
     document.getElementById('av-btn-bet').disabled=true;
-    // Следующий раунд через 4 сек
     setTimeout(()=>avStartCountdown(),4000);
 }
 

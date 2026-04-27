@@ -406,7 +406,13 @@ async function playRoulette(type){
 
 function renderRlHistory(){
     const el=document.getElementById('rl-history');
-    el.innerHTML=rlHistory.map(h=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:${h.num===0?'#1a7a3a':RED_SET.has(h.num)?'#8b1a1a':'#1a1a2e'};border:2px solid ${h.col};font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;color:${h.col}">${h.num}</span>`).join('');
+    el.innerHTML=rlHistory.map(h=>{
+        const isZero=h.num===0;
+        const isRed=RED_SET.has(h.num);
+        const bg=isZero?'#1a7a3a':isRed?'#c0392b':'#2c3e50';
+        const border=isZero?'#2ecc71':isRed?'#e74c3c':'#7f8c8d';
+        return `<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:${bg};border:2px solid ${border};font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;color:white">${h.num}</span>`;
+    }).join('');
 }
 
 /* ===== BLACKJACK ===== */
@@ -538,8 +544,11 @@ function avTick(ts){
     const el=(ts-avT0)/1000;
     avMul=Math.pow(Math.E,el*.22);
     const mEl=document.getElementById('av-multiplier');
-    mEl.textContent=avMul.toFixed(2)+'x';
-    mEl.className='av-multiplier '+(avMul<2?'green':avMul<5?'yellow':'red');
+    // Если уже вывели — показываем множитель вывода (замороженный), не обновляем
+    if(!avCashedOut){
+        mEl.textContent=avMul.toFixed(2)+'x';
+        mEl.className='av-multiplier '+(avMul<2?'green':avMul<5?'yellow':'red');
+    }
     const sw=avCv.width,sh=avCv.height;
     const px=Math.min(el/18,.88),py=Math.min(el/18,.82);
     const planeL=sw*.04+px*sw*.85,planeB=28+py*(sh-55);
@@ -550,9 +559,10 @@ function avTick(ts){
     if(avPts.length>1){
         avCtx.beginPath();avCtx.moveTo(avPts[0].x,avPts[0].y);
         for(let i=1;i<avPts.length;i++)avCtx.lineTo(avPts[i].x,avPts[i].y);
-        avCtx.strokeStyle='#e74c3c';avCtx.lineWidth=2.5;avCtx.stroke();
+        // Зелёная линия если уже вывели
+        avCtx.strokeStyle=avCashedOut?'#2ecc71':'#e74c3c';avCtx.lineWidth=2.5;avCtx.stroke();
         avCtx.lineTo(avPts[avPts.length-1].x,sh);avCtx.lineTo(avPts[0].x,sh);
-        avCtx.closePath();avCtx.fillStyle='rgba(231,76,60,.08)';avCtx.fill();
+        avCtx.closePath();avCtx.fillStyle=avCashedOut?'rgba(46,204,113,.08)':'rgba(231,76,60,.08)';avCtx.fill();
     }
     // Авто-вывод
     if(avAutoEnabled&&avBetPlaced&&!avCashedOut&&avMul>=avAutoMul){avCashout();return;}
@@ -567,8 +577,13 @@ function avCrash(){
     document.getElementById('av-crash-val').textContent=avCrashAt.toFixed(2)+'x';
     avHistory.unshift(avCrashAt.toFixed(2));if(avHistory.length>8)avHistory.pop();
     renderAvHist();
-    if(avBetPlaced&&!avCashedOut){showToast(`💥 Улетел на ${avCrashAt.toFixed(2)}x!`,'lose');updateUI();}
+    if(avBetPlaced&&!avCashedOut){
+        showToast(`💥 Улетел на ${avCrashAt.toFixed(2)}x!`,'lose');updateUI();
+    }
+    // Всегда сбрасываем кнопки при краше
     document.getElementById('av-btn-cashout').style.display='none';
+    document.getElementById('av-btn-bet').style.display='block';
+    document.getElementById('av-btn-bet').disabled=true;
     // Следующий раунд через 4 сек
     setTimeout(()=>avStartCountdown(),4000);
 }
@@ -593,16 +608,17 @@ async function avCashout(){
     const uid=getUserId();avCashedOut=true;
     const win=Math.floor(avBetAmt*avMul);
     const cashedMul=avMul.toFixed(2);
+    // Замораживаем множитель — показываем зелёным с иконкой
+    const mEl=document.getElementById('av-multiplier');
+    mEl.textContent='✅ '+cashedMul+'x';
+    mEl.className='av-multiplier green';
+    document.getElementById('av-btn-cashout').style.display='none';
+    document.getElementById('av-status').textContent=`Забрал x${cashedMul}! Ждём краша...`;
     try{
         const r=await api('/play_aviator_cashout',{method:'POST',body:JSON.stringify({user_id:uid,bet:avBetAmt,multiplier:avMul})});
         const d=await r.json();if(!r.ok)return showToast(d.error||'Ошибка','lose');
         showToast(`🤑 x${cashedMul}! +${win.toLocaleString('ru-RU')} монет`,'win',4000);updateUI();
     }catch(e){showToast('Ошибка сервера','lose');}
-    document.getElementById('av-btn-cashout').style.display='none';
-    // Показываем кнопку ПОСТАВИТЬ снова — чтобы можно было ставить в следующем раунде вручную
-    document.getElementById('av-btn-bet').style.display='block';
-    document.getElementById('av-btn-bet').disabled=true; // заблокирована пока летим
-    document.getElementById('av-status').textContent=`Забрал x${cashedMul}! Ждём...`;
 }
 
 function renderAvHist(){

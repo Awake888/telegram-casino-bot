@@ -404,26 +404,36 @@ function rlwDraw(W,H){
 
 function rlwSpin(targetNum, onDone){
   const idx=RLW_ORDER.indexOf(targetNum);
-  const n=RLW_ORDER.length,sectorAngle=360/n;
-  const targetDeg=idx*sectorAngle+sectorAngle/2;
-  rlwAngle+=1800+(360-rlwAngle%360+(360-targetDeg))%360;
+  const n=RLW_ORDER.length, sectorDeg=360/n;
+  // Центр нужного сектора должен оказаться сверху (0°).
+  // Сектор idx начинается с idx*sectorDeg (при начальном offset -90°),
+  // его центр находится на (idx + 0.5) * sectorDeg градусов от начала.
+  // Чтобы этот центр попал под указатель (верх = 0°),
+  // нужно повернуть колесо так, чтобы этот угол стал равен 0.
+  const sectorCenter=(idx+0.5)*sectorDeg; // угол центра сектора на колесе
+  // Текущий остаток поворота
+  const currentMod=rlwAngle%360;
+  // Сколько нужно добавить, чтобы sectorCenter оказался сверху
+  let extra=(360-sectorCenter-currentMod%360+360)%360;
+  if(extra<10) extra+=360; // минимум чуть больше полного оборота
+  rlwAngle+=2880+extra; // минимум 8 полных оборотов (~7 сек)
   const wrap=document.getElementById('rlw-wrap');
-  wrap.style.transition='transform 5s cubic-bezier(.15,0,.1,1)';
+  wrap.style.transition='transform 7s cubic-bezier(.25,.01,.05,1)';
   wrap.style.transform=`rotate(${rlwAngle}deg)`;
-  // Анимируем шарик
-  rlwAnimBall(5000,()=>{if(onDone)onDone();});
+  rlwAnimBall(7000,()=>{if(onDone)onDone();});
 }
 
 function rlwAnimBall(dur,onDone){
   const ball=document.getElementById('rlw-ball');
   const track=document.getElementById('rlw-ball-track');
-  const tw=track.offsetWidth||188,r=tw/2-10;
+  const tw=track.offsetWidth||188, r=tw/2-10;
   ball.style.display='block';
-  let start=null,ba=0;
+  let start=null, ba=0;
   function step(ts){
     if(!start)start=ts;
     const prog=Math.min((ts-start)/dur,1);
-    const spd=(1-prog)*.08+.01;
+    // Плавное замедление: скорость убывает по кубической кривой
+    const spd=Math.pow(1-prog,1.5)*.12+.003;
     ba-=spd*60;
     ball.style.left=(tw/2+r*Math.cos(ba*Math.PI/180)-5)+'px';
     ball.style.top=(tw/2+r*Math.sin(ba*Math.PI/180)-5)+'px';

@@ -46,8 +46,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;text-align:
 .bonus-timer{font-size:12px;color:#888;margin-top:6px;}
 .bonus-timer span{color:var(--acc);font-weight:700;}
 
-/* ROULETTE */
-.rl-hist{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;min-height:24px;}
+/* ROULETTE WHEEL */
+.rlw-outer{position:relative;width:220px;height:220px;margin:0 auto 14px;}
+.rlw-gold-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(#b8860b,#ffd700,#daa520,#ffd700,#b8860b,#ffd700,#daa520,#ffd700,#b8860b);box-shadow:0 0 20px rgba(255,215,0,.5),inset 0 0 10px rgba(0,0,0,.5);}
+.rlw-inner-ring{position:absolute;inset:8px;border-radius:50%;background:conic-gradient(#8B4513,#A0522D,#8B4513,#A0522D,#8B4513);box-shadow:inset 0 0 15px rgba(0,0,0,.6);}
+.rlw-canvas-wrap{position:absolute;inset:16px;border-radius:50%;overflow:hidden;transition:transform 5s cubic-bezier(.15,0,.1,1);}
+.rlw-ball-track{position:absolute;inset:14px;border-radius:50%;pointer-events:none;z-index:10;}
+.rlw-ball{position:absolute;width:10px;height:10px;background:radial-gradient(circle at 35% 35%,#fff,#ccc);border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.6);display:none;top:50%;left:50%;transform:translate(-50%,-50%);}
+.rlw-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:radial-gradient(circle at 40% 35%,#e8c84a,#b8860b,#7a5c00);border-radius:50%;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 3px #daa520;}
+.rlw-spokes{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;z-index:19;}
+.rlw-ptr{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:25;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:16px solid #ffd700;filter:drop-shadow(0 0 4px rgba(255,215,0,.8));}
 .rl-res{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;}
 .rl-num{font-family:'Unbounded',sans-serif;font-size:28px;font-weight:900;transition:color .3s;}
 .rl-outer{background:linear-gradient(160deg,#0c5c22,#0a3d18);border:3px solid #1a7a3a;border-radius:14px;padding:8px 6px;overflow-x:auto;box-shadow:0 0 30px rgba(0,120,50,.3);}
@@ -148,6 +156,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;text-align:
   <div class="gcard" style="padding:10px 8px;">
     <div class="gtitle" style="margin-bottom:6px;">🔴 Рулетка</div>
     <div class="rl-hist" id="rl-history"></div>
+
+    <!-- КОЛЕСО -->
+    <div class="rlw-outer" id="rlw-outer">
+      <div class="rlw-gold-ring"></div>
+      <div class="rlw-inner-ring"></div>
+      <div class="rlw-canvas-wrap" id="rlw-wrap">
+        <canvas id="rlw-canvas" style="width:100%;height:100%;"></canvas>
+      </div>
+      <div class="rlw-ball-track" id="rlw-ball-track">
+        <div class="rlw-ball" id="rlw-ball"></div>
+      </div>
+      <div class="rlw-center"></div>
+      <div class="rlw-ptr"></div>
+    </div>
+
     <div class="rl-res">
       <span style="font-family:'Unbounded',sans-serif;font-size:10px;color:#888;">ВЫПАЛО:</span>
       <span class="rl-num" id="rl-num">—</span>
@@ -281,6 +304,7 @@ function showPage(pid,nid){
   document.getElementById(pid).classList.add('active');
   document.getElementById(nid).classList.add('active');
   if(pid==='av-page'&&avCv) avResizeCv();
+  if(pid==='roulette-page'&&!rlwCv) setTimeout(rlwInit,50);
 }
 
 async function updateBal(){
@@ -337,6 +361,78 @@ function startBonusTimer(err){
   const iv=setInterval(()=>{s--;const mm=Math.floor(s/60),ss=s%60;tel.innerHTML=`Бонус через <span>${mm}:${ss.toString().padStart(2,'0')}</span>`;if(s<=0){clearInterval(iv);tel.innerHTML='';btn.disabled=false;}},1000);
 }
 
+/* ═══════════ ROULETTE WHEEL ═══════════ */
+const RLW_ORDER=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+let rlwCv=null,rlwCtx=null,rlwAngle=0;
+
+function rlwInit(){
+  const wrap=document.getElementById('rlw-wrap');
+  const W=wrap.offsetWidth||188,H=wrap.offsetHeight||188;
+  rlwCv=document.getElementById('rlw-canvas');
+  const dpr=window.devicePixelRatio||1;
+  rlwCv.width=W*dpr;rlwCv.height=H*dpr;
+  rlwCv.style.width=W+'px';rlwCv.style.height=H+'px';
+  rlwCtx=rlwCv.getContext('2d');rlwCtx.scale(dpr,dpr);
+  rlwDraw(W,H);
+}
+
+function rlwDraw(W,H){
+  const cx=W/2,cy=H/2,r=Math.min(W,H)/2-1;
+  const n=RLW_ORDER.length,a=2*Math.PI/n;
+  rlwCtx.clearRect(0,0,W,H);
+  RLW_ORDER.forEach((num,i)=>{
+    const s=i*a-Math.PI/2,e=s+a;
+    // Сектор
+    rlwCtx.beginPath();rlwCtx.moveTo(cx,cy);rlwCtx.arc(cx,cy,r,s,e);rlwCtx.closePath();
+    rlwCtx.fillStyle=num===0?'#1a7a3a':RL_RED.has(num)?'#8b1a1a':'#1a1a1a';
+    rlwCtx.fill();
+    rlwCtx.strokeStyle='rgba(255,215,0,0.3)';rlwCtx.lineWidth=0.5;rlwCtx.stroke();
+    // Текст
+    const tm=(i+.5)*a-Math.PI/2;
+    const tx=cx+(r*.78)*Math.cos(tm),ty=cy+(r*.78)*Math.sin(tm);
+    rlwCtx.save();rlwCtx.translate(tx,ty);rlwCtx.rotate(tm+Math.PI/2);
+    rlwCtx.fillStyle='white';rlwCtx.font=`bold ${r<90?9:10}px Inter,sans-serif`;
+    rlwCtx.textAlign='center';rlwCtx.textBaseline='middle';rlwCtx.fillText(num,0,0);
+    rlwCtx.restore();
+  });
+  // Внутренний круг
+  const grad=rlwCtx.createRadialGradient(cx,cy,r*.35,cx,cy,r*.55);
+  grad.addColorStop(0,'#8B4513');grad.addColorStop(1,'transparent');
+  rlwCtx.beginPath();rlwCtx.arc(cx,cy,r*.55,0,2*Math.PI);
+  rlwCtx.fillStyle='rgba(80,40,10,0.6)';rlwCtx.fill();
+}
+
+function rlwSpin(targetNum, onDone){
+  const idx=RLW_ORDER.indexOf(targetNum);
+  const n=RLW_ORDER.length,sectorAngle=360/n;
+  const targetDeg=idx*sectorAngle+sectorAngle/2;
+  rlwAngle+=1800+(360-rlwAngle%360+(360-targetDeg))%360;
+  const wrap=document.getElementById('rlw-wrap');
+  wrap.style.transition='transform 5s cubic-bezier(.15,0,.1,1)';
+  wrap.style.transform=`rotate(${rlwAngle}deg)`;
+  // Анимируем шарик
+  rlwAnimBall(5000,()=>{if(onDone)onDone();});
+}
+
+function rlwAnimBall(dur,onDone){
+  const ball=document.getElementById('rlw-ball');
+  const track=document.getElementById('rlw-ball-track');
+  const tw=track.offsetWidth||188,r=tw/2-10;
+  ball.style.display='block';
+  let start=null,ba=0;
+  function step(ts){
+    if(!start)start=ts;
+    const prog=Math.min((ts-start)/dur,1);
+    const spd=(1-prog)*.08+.01;
+    ba-=spd*60;
+    ball.style.left=(tw/2+r*Math.cos(ba*Math.PI/180)-5)+'px';
+    ball.style.top=(tw/2+r*Math.sin(ba*Math.PI/180)-5)+'px';
+    if(prog<1)requestAnimationFrame(step);
+    else{ball.style.display='none';if(onDone)onDone();}
+  }
+  requestAnimationFrame(step);
+}
+
 /* ═══════════ ROULETTE ═══════════ */
 const RL_RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 (function(){
@@ -365,15 +461,17 @@ async function rlBet(type){
     if(!r.ok){showToast(d.error||'Ошибка','lose');rlBusy=false;return;}
     const num=d.number,isRed=RL_RED.has(num);
     const col=num===0?'#2ecc71':isRed?'#e74c3c':'#bbb';
-    const el=document.getElementById('rl-num');el.textContent=num;el.style.color=col;
-    document.querySelectorAll('.rl-nc').forEach(c=>{c.classList.remove('hit');if(parseInt(c.dataset.n)===num)c.classList.add('hit');});
-    setTimeout(()=>document.querySelectorAll('.rl-nc').forEach(c=>c.classList.remove('hit')),4000);
-    rlHist.unshift({num});if(rlHist.length>12)rlHist.pop();
-    renderRlHist();updateBal();
-    if(d.win>0)showToast(`🏆 +${d.win.toLocaleString('ru-RU')} монет!`,'win');
-    else showToast('💸 Не повезло...','lose');
-  }catch(e){showToast('Ошибка сервера','lose');}
-  rlBusy=false;
+    // Крутим колесо, результат показываем после
+    rlwSpin(num,()=>{
+      const el=document.getElementById('rl-num');el.textContent=num;el.style.color=col;
+      document.querySelectorAll('.rl-nc').forEach(c=>{c.classList.remove('hit');if(parseInt(c.dataset.n)===num)c.classList.add('hit');});
+      setTimeout(()=>document.querySelectorAll('.rl-nc').forEach(c=>c.classList.remove('hit')),4000);
+      rlHist.unshift({num});if(rlHist.length>12)rlHist.pop();renderRlHist();updateBal();
+      if(d.win>0)showToast(`🏆 +${d.win.toLocaleString('ru-RU')} монет!`,'win');
+      else showToast('💸 Не повезло...','lose');
+      rlBusy=false;
+    });
+  }catch(e){showToast('Ошибка сервера','lose');rlBusy=false;}
 }
 function renderRlHist(){
   const el=document.getElementById('rl-history');

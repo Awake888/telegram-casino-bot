@@ -565,7 +565,10 @@ function avTick(ts){
         avCtx.closePath();avCtx.fillStyle=avCashedOut?'rgba(46,204,113,.08)':'rgba(231,76,60,.08)';avCtx.fill();
     }
     // Авто-вывод
-    if(avAutoEnabled&&avBetPlaced&&!avCashedOut&&avMul>=avAutoMul){avCashout();return;}
+    if(avAutoEnabled&&avBetPlaced&&!avCashedOut&&avMul>=avAutoMul){
+        avCashout();
+        // НЕ делаем return — продолжаем анимацию до краша
+    }
     if(avMul>=avCrashAt){avCrash();return;}
     avFrame=requestAnimationFrame(avTick);
 }
@@ -619,6 +622,8 @@ async function avCashout(){
         const d=await r.json();if(!r.ok)return showToast(d.error||'Ошибка','lose');
         showToast(`🤑 x${cashedMul}! +${win.toLocaleString('ru-RU')} монет`,'win',4000);updateUI();
     }catch(e){showToast('Ошибка сервера','lose');}
+    // Принудительно крашим через 2.5 сек — разблокирует следующий раунд
+    setTimeout(()=>{ if(avState==='flying') avCrash(); }, 2500);
 }
 
 function renderAvHist(){

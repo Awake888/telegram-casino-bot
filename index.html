@@ -266,6 +266,7 @@ function showPage(id,el){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
     document.getElementById(id).classList.add('active');el.classList.add('active');
+    if(id==='aviator-page'&&avCv) avResizeCanvas();
 }
 async function updateUI(){
     try{
@@ -473,114 +474,119 @@ function avToggleAuto(){
 }
 
 function avInit(){
-    avCv=document.getElementById('av-canvas');avCtx=avCv.getContext('2d');
+    avCv=document.getElementById('av-canvas');
+    avCtx=avCv.getContext('2d');
+    avResizeCanvas();
+}
+
+function avResizeCanvas(){
     const s=document.getElementById('av-screen');
-    avCv.width=s.offsetWidth||320;avCv.height=s.offsetHeight||260;
+    const W=s.clientWidth||s.offsetWidth||320;
+    const H=s.clientHeight||s.offsetHeight||260;
+    const dpr=window.devicePixelRatio||1;
+    avCv.width=W*dpr;
+    avCv.height=H*dpr;
+    avCv.style.width=W+'px';
+    avCv.style.height=H+'px';
+    avCtx.scale(dpr,dpr);
+    // Сохраняем логические размеры
+    avCv._W=W; avCv._H=H;
 }
 
 function avDrawFrame(mul, crashed, cashedOut){
-    const W=avCv.width, H=avCv.height;
-    const PAD_L=48, PAD_B=36, PAD_T=60, PAD_R=20;
+    const W=avCv._W||320, H=avCv._H||260;
+    const PAD_L=44, PAD_B=28, PAD_T=16, PAD_R=16;
     const cW=W-PAD_L-PAD_R, cH=H-PAD_T-PAD_B;
-    avCtx.clearRect(0,0,W,H);
 
-    // Фон
+    avCtx.clearRect(0,0,W,H);
     avCtx.fillStyle='#080b14';
     avCtx.fillRect(0,0,W,H);
 
     // Сетка
-    avCtx.strokeStyle='rgba(255,255,255,0.04)';
-    avCtx.lineWidth=1;
-    for(let i=0;i<=4;i++){
-        const y=PAD_T+cH*(i/4);
+    avCtx.strokeStyle='rgba(255,255,255,0.05)';
+    avCtx.lineWidth=0.5;
+    for(let i=0;i<=5;i++){
+        const y=PAD_T+cH*(i/5);
         avCtx.beginPath();avCtx.moveTo(PAD_L,y);avCtx.lineTo(W-PAD_R,y);avCtx.stroke();
     }
-    for(let i=0;i<=4;i++){
-        const x=PAD_L+cW*(i/4);
+    for(let i=0;i<=6;i++){
+        const x=PAD_L+cW*(i/6);
         avCtx.beginPath();avCtx.moveTo(x,PAD_T);avCtx.lineTo(x,PAD_T+cH);avCtx.stroke();
     }
 
     // Оси
-    avCtx.strokeStyle='rgba(255,255,255,0.15)';avCtx.lineWidth=1.5;
-    avCtx.beginPath();avCtx.moveTo(PAD_L,PAD_T);avCtx.lineTo(PAD_L,PAD_T+cH);avCtx.lineTo(W-PAD_R,PAD_T+cH);avCtx.stroke();
+    avCtx.strokeStyle='rgba(255,255,255,0.2)';avCtx.lineWidth=1.5;
+    avCtx.beginPath();
+    avCtx.moveTo(PAD_L,PAD_T);
+    avCtx.lineTo(PAD_L,PAD_T+cH);
+    avCtx.lineTo(W-PAD_R,PAD_T+cH);
+    avCtx.stroke();
 
-    // Метки по Y (множители)
-    avCtx.fillStyle='rgba(255,255,255,0.3)';avCtx.font='bold 9px Inter,sans-serif';avCtx.textAlign='right';
-    const yLabels=[1,1.5,2,3,5];
-    yLabels.forEach(v=>{
-        const frac=Math.min((v-1)/(Math.max(mul,2)-1+0.01),1);
+    // Метки Y
+    const maxMul=Math.max(mul*1.2, 2);
+    const ySteps=[1,1.5,2,3,5,10];
+    avCtx.fillStyle='rgba(255,255,255,0.4)';
+    avCtx.font='bold 10px Inter,sans-serif';
+    avCtx.textAlign='right';
+    ySteps.forEach(v=>{
+        if(v>maxMul)return;
+        const frac=(v-1)/(maxMul-1);
         const y=PAD_T+cH*(1-frac);
-        avCtx.fillText(v+'x',PAD_L-5,y+3);
-        avCtx.strokeStyle='rgba(255,255,255,0.07)';avCtx.lineWidth=0.5;
-        avCtx.beginPath();avCtx.moveTo(PAD_L,y);avCtx.lineTo(W-PAD_R,y);avCtx.stroke();
+        avCtx.fillText(v+'x', PAD_L-5, y+4);
     });
 
-    if(avPts.length<2)return;
+    if(avRawPts.length<2) return;
 
-    // Цвет линии
-    const lineColor = crashed?'#e74c3c': cashedOut?'#2ecc71':'#e74c3c';
-    const glowColor = crashed?'rgba(231,76,60,0.3)': cashedOut?'rgba(46,204,113,0.3)':'rgba(231,76,60,0.3)';
+    // Вычисляем точки
+    const elapsed=avRawPts[avRawPts.length-1].t;
+    const pts=avRawPts.map(p=>({
+        cx: PAD_L + (p.t/elapsed)*cW,
+        cy: PAD_T + cH*(1 - Math.min((p.m-1)/(maxMul-1),1))
+    }));
+
+    const lineColor = (crashed||!cashedOut)?'#e74c3c':'#2ecc71';
+    const fillColor = cashedOut&&!crashed?'rgba(46,204,113,0.15)':'rgba(231,76,60,0.12)';
+    const glowColor = cashedOut&&!crashed?'rgba(46,204,113,0.6)':'rgba(231,76,60,0.6)';
 
     // Заливка под кривой
     avCtx.beginPath();
-    avCtx.moveTo(avPts[0].cx, PAD_T+cH);
-    avPts.forEach(p=>avCtx.lineTo(p.cx,p.cy));
-    avCtx.lineTo(avPts[avPts.length-1].cx, PAD_T+cH);
+    avCtx.moveTo(pts[0].cx, PAD_T+cH);
+    pts.forEach(p=>avCtx.lineTo(p.cx,p.cy));
+    avCtx.lineTo(pts[pts.length-1].cx, PAD_T+cH);
     avCtx.closePath();
     const grad=avCtx.createLinearGradient(0,PAD_T,0,PAD_T+cH);
-    grad.addColorStop(0, cashedOut?'rgba(46,204,113,0.25)':'rgba(231,76,60,0.2)');
+    grad.addColorStop(0, fillColor);
     grad.addColorStop(1,'rgba(0,0,0,0)');
     avCtx.fillStyle=grad;avCtx.fill();
 
-    // Линия кривой — свечение
-    avCtx.shadowColor=glowColor;avCtx.shadowBlur=12;
-    avCtx.beginPath();avCtx.moveTo(avPts[0].cx,avPts[0].cy);
-    avPts.forEach(p=>avCtx.lineTo(p.cx,p.cy));
-    avCtx.strokeStyle=lineColor;avCtx.lineWidth=3;avCtx.lineJoin='round';avCtx.stroke();
+    // Линия
+    avCtx.shadowColor=glowColor;avCtx.shadowBlur=10;
+    avCtx.beginPath();avCtx.moveTo(pts[0].cx,pts[0].cy);
+    pts.forEach(p=>avCtx.lineTo(p.cx,p.cy));
+    avCtx.strokeStyle=lineColor;avCtx.lineWidth=2.5;avCtx.lineJoin='round';avCtx.lineCap='round';avCtx.stroke();
     avCtx.shadowBlur=0;
 
-    // Точка на конце
-    if(!crashed){
-        const last=avPts[avPts.length-1];
+    if(!crashed && pts.length>0){
+        const last=pts[pts.length-1];
+        const prev=pts.length>1?pts[pts.length-2]:pts[0];
+        const angle=Math.atan2(last.cy-prev.cy, last.cx-prev.cx);
+
+        // Светящаяся точка
+        avCtx.shadowColor=glowColor;avCtx.shadowBlur=20;
         avCtx.beginPath();avCtx.arc(last.cx,last.cy,5,0,Math.PI*2);
         avCtx.fillStyle=lineColor;avCtx.fill();
-        avCtx.shadowColor=glowColor;avCtx.shadowBlur=15;
-        avCtx.beginPath();avCtx.arc(last.cx,last.cy,3,0,Math.PI*2);
-        avCtx.fillStyle='white';avCtx.fill();
         avCtx.shadowBlur=0;
 
-        // Самолётик на кончике
-        const prev=avPts.length>1?avPts[avPts.length-2]:avPts[0];
-        const angle=Math.atan2(last.cy-prev.cy, last.cx-prev.cx);
+        // Самолётик
         avCtx.save();
         avCtx.translate(last.cx, last.cy);
-        avCtx.rotate(angle);
-        avCtx.font='22px serif';
-        avCtx.textAlign='center';avCtx.textBaseline='middle';
-        avCtx.fillText('✈️',-4,-4);
+        avCtx.rotate(angle - Math.PI/8);
+        avCtx.font='20px serif';
+        avCtx.textAlign='center';
+        avCtx.textBaseline='middle';
+        avCtx.fillText('✈️', 0, 0);
         avCtx.restore();
     }
-}
-
-function avPtsFromTime(elapsed, mul){
-    // Пересчитываем все точки кривой под текущий масштаб
-    const W=avCv.width, H=avCv.height;
-    const PAD_L=48, PAD_B=36, PAD_T=60, PAD_R=20;
-    const cW=W-PAD_L-PAD_R, cH=H-PAD_T-PAD_B;
-    const maxMul=Math.max(mul*1.15, 2);
-    const pts=[];
-    const steps=Math.min(avRawPts.length,200);
-    const skip=Math.max(1,Math.floor(avRawPts.length/steps));
-    for(let i=0;i<avRawPts.length;i+=skip){
-        const p=avRawPts[i];
-        const fx=p.t/Math.max(elapsed,0.1);
-        const fy=(p.m-1)/(maxMul-1);
-        pts.push({
-            cx: PAD_L+fx*cW,
-            cy: PAD_T+cH*(1-Math.min(fy,1))
-        });
-    }
-    return pts;
 }
 function avGenCrash(){
     const r=Math.random();
@@ -641,12 +647,7 @@ function avTick(ts){
     if(!avT0)avT0=ts;
     const el=(ts-avT0)/1000;
     avMul=Math.pow(Math.E,el*.22);
-
-    // Накапливаем сырые точки (время + множитель)
     avRawPts.push({t:el, m:avMul});
-
-    // Пересчитываем экранные точки под текущий масштаб
-    avPts=avPtsFromTime(el, avMul);
 
     const mEl=document.getElementById('av-multiplier');
     if(!avCashedOut){
@@ -656,10 +657,7 @@ function avTick(ts){
 
     avDrawFrame(avMul, false, avCashedOut);
 
-    // Авто-вывод
-    if(avAutoEnabled&&avBetPlaced&&!avCashedOut&&avMul>=avAutoMul){
-        avCashout();
-    }
+    if(avAutoEnabled&&avBetPlaced&&!avCashedOut&&avMul>=avAutoMul) avCashout();
     if(avMul>=avCrashAt){avCrash();return;}
     avFrame=requestAnimationFrame(avTick);
 }
@@ -724,8 +722,10 @@ function renderAvHist(){
 
 /* ===== INIT ===== */
 updateUI();
-avInit();
-setTimeout(()=>avStartCountdown(),500);
+setTimeout(()=>{
+    avInit();
+    avStartCountdown();
+},100);
 setInterval(updateUI,10000);
 </script>
 </body>

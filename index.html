@@ -52,24 +52,44 @@
         /* ROULETTE */
         .rl-wrap{position:relative;width:260px;height:260px;margin:0 auto 10px;}
         .rl-ptr{position:absolute;top:-2px;left:50%;transform:translateX(-50%);font-size:20px;color:var(--accent);z-index:20;line-height:1;}
-        .rl-svg{width:100%;height:100%;transition:transform 5s cubic-bezier(.15,0,.1,1);}
-        .rl-ball{position:absolute;width:12px;height:12px;background:white;border-radius:50%;z-index:15;pointer-events:none;box-shadow:0 0 6px rgba(255,255,255,.7);display:none;}
-        .rl-num{font-family:'Unbounded',sans-serif;font-size:38px;font-weight:900;margin:6px 0;transition:color .3s;}
-        .rl-bets{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:8px;}
-        /* Number picker */
-        .rl-num-picker{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin:10px 0;padding:10px;background:var(--card2);border-radius:12px;}
-        .rl-num-btn{background:#222;color:white;border:1px solid #333;border-radius:6px;padding:6px 2px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Unbounded',sans-serif;}
-        .rl-num-btn:hover{transform:scale(1.1);}
-        .rl-num-btn.red-n{background:#5a1010;border-color:#e74c3c;color:#e74c3c;}
-        .rl-num-btn.red-n.sel{background:#e74c3c;color:white;}
-        .rl-num-btn.black-n{background:#1a1a2e;border-color:#555;color:#aaa;}
-        .rl-num-btn.black-n.sel{background:#2c3e50;color:white;border-color:#3498db;}
-        .rl-num-btn.zero-n{background:#0d3320;border-color:#2ecc71;color:#2ecc71;}
-        .rl-num-btn.zero-n.sel{background:#2ecc71;color:#111;}
-        .rl-selected-display{font-family:'Unbounded',sans-serif;font-size:11px;color:var(--accent);margin:6px 0;min-height:16px;}
-        .rl-tab{display:flex;gap:0;margin-bottom:10px;border-radius:10px;overflow:hidden;border:1px solid var(--border);}
-        .rl-tab-btn{flex:1;padding:9px;background:var(--card2);color:#888;border:none;cursor:pointer;font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;transition:all .2s;}
-        .rl-tab-btn.active{background:var(--accent);color:#111;}
+        /* ROULETTE TABLE */
+        .rl-num{font-family:'Unbounded',sans-serif;font-size:38px;font-weight:900;margin:4px 0;transition:color .3s;text-align:center;}
+        .rl-wrap-outer{background:linear-gradient(160deg,#0c5c22,#0a3d18);border:3px solid #1a7a3a;border-radius:14px;padding:8px 6px;overflow-x:auto;box-shadow:0 0 30px rgba(0,120,50,0.3);}
+        /* Стол */
+        .rl-casino-table{display:flex;flex-direction:row;gap:3px;min-width:300px;}
+        /* Зеро */
+        .rl-zero-wrap{display:flex;flex-direction:column;gap:3px;}
+        .rl-zero-cell{background:#1a7a3a;border:2px solid #2ecc71;border-radius:5px;color:white;font-family:'Unbounded',sans-serif;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;width:32px;flex:1;writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:2px;}
+        .rl-zero-cell:hover{background:#27ae60;transform:scale(1.05);box-shadow:0 0 10px #2ecc71;}
+        /* Числовая сетка */
+        .rl-numbers-wrap{flex:1;display:flex;flex-direction:column;gap:3px;}
+        .rl-numbers-grid{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(3,1fr);gap:2px;}
+        .rl-nc{border-radius:4px;color:white;font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:5px 1px;border:1px solid rgba(255,255,255,0.12);transition:all .15s;min-height:28px;min-width:0;}
+        .rl-nc:hover{transform:scale(1.12);border-color:#fff;z-index:2;position:relative;box-shadow:0 0 8px rgba(255,255,255,0.5);}
+        .rl-nc.red{background:#8b1a1a;}
+        .rl-nc.red:hover{background:#c0392b;}
+        .rl-nc.black{background:#111827;}
+        .rl-nc.black:hover{background:#1f2937;}
+        .rl-nc.selected{outline:3px solid #f1c40f;z-index:3;transform:scale(1.1);}
+        .rl-nc.highlighted{outline:3px solid #fff;box-shadow:0 0 14px #fff;z-index:4;}
+        /* Колонки 2:1 */
+        .rl-2to1-col{display:flex;flex-direction:column;gap:2px;}
+        .rl-2to1{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);border-radius:4px;color:white;font-family:'Unbounded',sans-serif;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex:1;padding:2px 3px;white-space:nowrap;}
+        .rl-2to1:hover{background:rgba(255,255,255,0.28);box-shadow:0 0 6px rgba(255,255,255,0.3);}
+        /* Нижние ставки */
+        .rl-bottom-bets{display:flex;flex-direction:column;gap:3px;margin-top:4px;}
+        .rl-dozens-row{display:grid;grid-template-columns:32px repeat(3,1fr) 28px;gap:2px;}
+        .rl-dozen{background:rgba(255,255,255,0.09);border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:white;font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;padding:6px 2px;text-align:center;cursor:pointer;transition:all .15s;}
+        .rl-dozen:hover{background:rgba(255,255,255,0.25);box-shadow:0 0 6px rgba(255,255,255,0.2);}
+        .rl-dozen.spacer{visibility:hidden;}
+        .rl-simple-row{display:grid;grid-template-columns:32px 1fr 1fr 1fr 1fr 1fr 1fr 28px;gap:2px;}
+        .rl-sb{border:1px solid rgba(255,255,255,0.2);border-radius:5px;color:white;font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;padding:6px 2px;text-align:center;cursor:pointer;transition:all .15s;background:rgba(255,255,255,0.07);}
+        .rl-sb:hover{background:rgba(255,255,255,0.22);box-shadow:0 0 6px rgba(255,255,255,0.2);}
+        .rl-sb.red-bg{background:#8b1a1a!important;border-color:#e74c3c!important;font-size:14px!important;}
+        .rl-sb.red-bg:hover{background:#c0392b!important;}
+        .rl-sb.black-bg{background:#111!important;border-color:#555!important;font-size:14px!important;}
+        .rl-sb.black-bg:hover{background:#222!important;}
+        .rl-sb.spacer{visibility:hidden;}
 
         /* BLACKJACK */
         .bj-table{background:linear-gradient(135deg,#0a2010,#0d3318);border:2px solid #1a5c2e;border-radius:16px;padding:16px;margin:10px 0 16px;}
@@ -132,46 +152,61 @@
 
 <!-- ROULETTE -->
 <div id="roulette-page" class="page">
-    <div class="game-card">
-        <div class="game-title">🔴 Рулетка</div>
-        <!-- История -->
-        <div id="rl-history" style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;min-height:24px;"></div>
-        <div class="rl-wrap" id="rl-wrap">
-            <div class="rl-ptr">▼</div>
-            <svg id="rl-svg" class="rl-svg" viewBox="0 0 200 200"></svg>
-        </div>
-        <div class="rl-num" id="rl-num">—</div>
-        <input type="number" class="bet-input" id="roulette-bet" value="500" min="1">
+    <div class="game-card" style="padding:10px 8px;">
+        <div class="game-title" style="margin-bottom:6px;">🎰 Рулетка</div>
 
-        <!-- Табы -->
-        <div class="rl-tab">
-            <button class="rl-tab-btn active" onclick="rlTab('simple',this)">ПРОСТЫЕ</button>
-            <button class="rl-tab-btn" onclick="rlTab('sectors',this)">СЕКТОРЫ</button>
-            <button class="rl-tab-btn" onclick="rlTab('numbers',this)">ЧИСЛА</button>
+        <!-- История + выпавшее число -->
+        <div id="rl-history" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:6px;min-height:24px;"></div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;">
+            <div style="font-family:'Unbounded',sans-serif;font-size:10px;color:#888;">ВЫПАЛО:</div>
+            <div class="rl-num" id="rl-num" style="font-size:26px;margin:0;">—</div>
+            <input type="number" class="bet-input" id="roulette-bet" value="500" min="1" style="width:110px;margin:0;padding:8px 12px;font-size:14px;">
         </div>
 
-        <!-- Простые ставки -->
-        <div id="rl-simple" class="rl-bets">
-            <button class="btn btn-red" onclick="playRoulette('red')">🔴 КРАСНОЕ x2</button>
-            <button class="btn btn-black" onclick="playRoulette('black')">⚫ ЧЁРНОЕ x2</button>
-            <button class="btn btn-green" onclick="playRoulette('green')">💚 ЗЕРО x35</button>
-            <button class="btn" style="background:linear-gradient(135deg,#8e44ad,#9b59b6)" onclick="playRoulette('even')">ЧЁТ x2</button>
-            <button class="btn" style="background:linear-gradient(135deg,#16a085,#1abc9c)" onclick="playRoulette('odd')">НЕЧЕТ x2</button>
+        <!-- КАЗИНО СТОЛ -->
+        <div class="rl-wrap-outer">
+            <!-- Верхняя часть: зеро + числа + 2:1 -->
+            <div class="rl-casino-table">
+                <!-- 0 -->
+                <div class="rl-zero-wrap">
+                    <div class="rl-zero-cell" onclick="playRoulette('green')">0</div>
+                </div>
+                <!-- Числа 1–36 по 3 ряда -->
+                <div class="rl-numbers-wrap">
+                    <div class="rl-numbers-grid" id="rl-grid"></div>
+                </div>
+                <!-- 2:1 -->
+                <div class="rl-2to1-col">
+                    <div class="rl-2to1" onclick="playRoulette('row3')">2:1</div>
+                    <div class="rl-2to1" onclick="playRoulette('row2')">2:1</div>
+                    <div class="rl-2to1" onclick="playRoulette('row1')">2:1</div>
+                </div>
+            </div>
+
+            <!-- Нижние ставки -->
+            <div class="rl-bottom-bets">
+                <!-- 1st/2nd/3rd 12 -->
+                <div class="rl-dozens-row">
+                    <div class="rl-dozen spacer"></div>
+                    <div class="rl-dozen" onclick="playRoulette('low')">1st 12</div>
+                    <div class="rl-dozen" onclick="playRoulette('mid')">2nd 12</div>
+                    <div class="rl-dozen" onclick="playRoulette('high')">3rd 12</div>
+                    <div class="rl-dozen spacer"></div>
+                </div>
+                <!-- 1-18 / Even / Red / Black / Odd / 19-36 -->
+                <div class="rl-simple-row">
+                    <div class="rl-sb spacer"></div>
+                    <div class="rl-sb" onclick="playRoulette('low18')">1–18</div>
+                    <div class="rl-sb" onclick="playRoulette('even')">Even</div>
+                    <div class="rl-sb red-bg" onclick="playRoulette('red')">♦</div>
+                    <div class="rl-sb black-bg" onclick="playRoulette('black')">♠</div>
+                    <div class="rl-sb" onclick="playRoulette('odd')">Odd</div>
+                    <div class="rl-sb" onclick="playRoulette('high18')">19–36</div>
+                    <div class="rl-sb spacer"></div>
+                </div>
+            </div>
         </div>
 
-        <!-- Секторы -->
-        <div id="rl-sectors" style="display:none" class="rl-bets">
-            <button class="btn" style="background:linear-gradient(135deg,#1a3a6c,#2980b9)" onclick="playRoulette('low')">1–12 x3</button>
-            <button class="btn" style="background:linear-gradient(135deg,#6c1a5a,#9b59b6)" onclick="playRoulette('mid')">13–24 x3</button>
-            <button class="btn" style="background:linear-gradient(135deg,#1a5c1a,#27ae60)" onclick="playRoulette('high')">25–36 x3</button>
-        </div>
-
-        <!-- Числа -->
-        <div id="rl-numbers" style="display:none">
-            <div class="rl-selected-display" id="rl-sel-display">Выбери число</div>
-            <div class="rl-num-picker" id="rl-num-picker"></div>
-            <button class="btn btn-yellow" id="rl-num-bet-btn" onclick="playRouletteNumber()" disabled>ПОСТАВИТЬ НА ЧИСЛО x36</button>
-        </div>
     </div>
 </div>
 
@@ -356,50 +391,81 @@ let rlSelectedNum=null;
     }
 })();
 
-function rlTab(tab,el){
-    document.querySelectorAll('.rl-tab-btn').forEach(b=>b.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById('rl-simple').style.display='none';
-    document.getElementById('rl-sectors').style.display='none';
-    document.getElementById('rl-numbers').style.display='none';
-    document.getElementById('rl-'+tab).style.display=(tab==='numbers'?'block':'flex');
+/* ===== ROULETTE ===== */
+// Стандартный порядок числа по рядам рулеточного стола
+// Ряд 1 (верх): 3,6,9,12,15,18,21,24,27,30,33,36
+// Ряд 2 (середина): 2,5,8,11,14,17,20,23,26,29,32,35
+// Ряд 3 (низ): 1,4,7,10,13,16,19,22,25,28,31,34
+const RL_ROWS = [
+    [3,6,9,12,15,18,21,24,27,30,33,36],
+    [2,5,8,11,14,17,20,23,26,29,32,35],
+    [1,4,7,10,13,16,19,22,25,28,31,34]
+];
+const RED_SET = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+
+function initRoulette(){
+    const grid=document.getElementById('rl-grid');
+    if(!grid)return;
+    grid.innerHTML='';
+    RL_ROWS.forEach(row=>{
+        row.forEach(num=>{
+            const isRed=RED_SET.has(num);
+            const cell=document.createElement('div');
+            cell.className='rl-nc '+(isRed?'red':'black');
+            cell.textContent=num;
+            cell.dataset.num=num;
+            cell.onclick=()=>playRoulette('number:'+num);
+            grid.appendChild(cell);
+        });
+    });
 }
 
-function playRouletteNumber(){
-    if(rlSelectedNum===null)return showToast('Выбери число!','lose');
-    playRoulette('number:'+rlSelectedNum);
+function highlightResult(num){
+    document.querySelectorAll('.rl-nc').forEach(c=>{
+        c.classList.remove('highlighted');
+        if(parseInt(c.dataset.num)===num)c.classList.add('highlighted');
+    });
+    setTimeout(()=>document.querySelectorAll('.rl-nc').forEach(c=>c.classList.remove('highlighted')),4000);
+}
+        c.classList.remove('highlighted');
+        if(parseInt(c.dataset.num)===num) c.classList.add('highlighted');
+    });
+    setTimeout(()=>document.querySelectorAll('.rl-num-cell').forEach(c=>c.classList.remove('highlighted')),4000);
 }
 
-let rlAngle=0,rlSpinning=false,rlHistory=[];
+let rlSpinning=false, rlHistory=[];
 async function playRoulette(type){
     if(rlSpinning)return;
-    const uid=getUserId(),bet=parseInt(document.getElementById('roulette-bet').value);
-    if(!bet||bet<1)return showToast('Введи ставку!','lose');
+    const uid=getUserId(), bet=parseInt(document.getElementById('roulette-bet').value);
+    if(!bet||bet<1) return showToast('Введи ставку!','lose');
+    // Маппинг новых типов на старые
+    let serverType = type;
+    if(type==='low18') serverType='low18';
+    if(type==='high18') serverType='high18';
+    if(type==='row1') serverType='row1';
+    if(type==='row2') serverType='row2';
+    if(type==='row3') serverType='row3';
     rlSpinning=true;
-    document.getElementById('rl-num').textContent='—';document.getElementById('rl-num').style.color='white';
+    document.getElementById('rl-num').textContent='…';
+    document.getElementById('rl-num').style.color='white';
     let d;
     try{
-        const r=await api('/play_roulette',{method:'POST',body:JSON.stringify({user_id:uid,bet,type})});
+        const r=await api('/play_roulette',{method:'POST',body:JSON.stringify({user_id:uid,bet,type:serverType})});
         d=await r.json();
         if(!r.ok){showToast(d.error||'Ошибка','lose');rlSpinning=false;return;}
     }catch(e){showToast('Ошибка сервера','lose');rlSpinning=false;return;}
-    const num=d.number,idx=RL_NUMS.indexOf(num),sa=360/RL_NUMS.length,ta=idx*sa+sa/2;
-    rlAngle+=1800+(360-rlAngle%360+(360-ta))%360;
-    const svg=document.getElementById('rl-svg');
-    svg.style.transition='transform 5s cubic-bezier(.15,0,.1,1)';
-    svg.style.transform=`rotate(${rlAngle}deg)`;
-    setTimeout(()=>{
-        const isRed=RED_SET.has(num);
-        const col=num===0?'#2ecc71':isRed?'#e74c3c':'#aaa';
-        const el=document.getElementById('rl-num');el.textContent=num;el.style.color=col;
-        // Добавляем в историю
-        rlHistory.unshift({num,col});if(rlHistory.length>12)rlHistory.pop();
-        renderRlHistory();
-        updateUI();
-        if(d.win>0)showToast(`🏆 Победа! +${d.win.toLocaleString('ru-RU')} монет`,'win');
-        else showToast('💸 Не повезло...','lose');
-        rlSpinning=false;
-    },5100);
+    const num=d.number;
+    const isRed=RED_SET.has(num);
+    const col=num===0?'#2ecc71':isRed?'#e74c3c':'#bbb';
+    const el=document.getElementById('rl-num');
+    el.textContent=num; el.style.color=col;
+    if(num!==0) highlightResult(num);
+    rlHistory.unshift({num});if(rlHistory.length>14)rlHistory.pop();
+    renderRlHistory();
+    updateUI();
+    if(d.win>0) showToast(`🏆 +${d.win.toLocaleString('ru-RU')} монет!`,'win');
+    else showToast('💸 Не повезло...','lose');
+    rlSpinning=false;
 }
 
 function renderRlHistory(){
@@ -722,6 +788,7 @@ function renderAvHist(){
 
 /* ===== INIT ===== */
 updateUI();
+initRoulette();
 setTimeout(()=>{
     avInit();
     avStartCountdown();

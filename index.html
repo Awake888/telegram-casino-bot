@@ -46,14 +46,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;text-align:
 .bonus-timer{font-size:12px;color:#888;margin-top:6px;}
 .bonus-timer span{color:var(--acc);font-weight:700;}
 
-/* ROULETTE WHEEL */
-.rlw-outer{position:relative;width:220px;height:220px;margin:0 auto 14px;}
-.rlw-gold-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(#b8860b,#ffd700,#daa520,#ffd700,#b8860b,#ffd700,#daa520,#ffd700,#b8860b);box-shadow:0 0 20px rgba(255,215,0,.5),inset 0 0 10px rgba(0,0,0,.5);}
-.rlw-inner-ring{position:absolute;inset:8px;border-radius:50%;background:conic-gradient(#8B4513,#A0522D,#8B4513,#A0522D,#8B4513);box-shadow:inset 0 0 15px rgba(0,0,0,.6);}
-.rlw-canvas-wrap{position:absolute;inset:16px;border-radius:50%;overflow:hidden;}
-.rlw-ball-track{position:absolute;inset:8px;border-radius:50%;pointer-events:none;z-index:10;}
-.rlw-ball{position:absolute;width:11px;height:11px;background:radial-gradient(circle at 35% 35%,#fff,#ddd);border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,.8),0 0 4px rgba(255,255,255,.6);display:none;}
-.rlw-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:radial-gradient(circle at 40% 35%,#e8c84a,#b8860b,#7a5c00);border-radius:50%;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 3px #daa520;}
+/* ROULETTE */
+.rl-hist{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;min-height:24px;}
 .rl-res{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;}
 .rl-num{font-family:'Unbounded',sans-serif;font-size:28px;font-weight:900;transition:color .3s;}
 .rl-outer{background:linear-gradient(160deg,#0c5c22,#0a3d18);border:3px solid #1a7a3a;border-radius:14px;padding:8px 6px;overflow-x:auto;box-shadow:0 0 30px rgba(0,120,50,.3);}
@@ -82,33 +76,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;text-align:
 .rl-sb.bb:hover{background:#222!important;}
 .rl-sb.sp{visibility:hidden;}
 
-/* CASES */
-.case-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:12px 8px;cursor:pointer;transition:all .2s;text-align:center;}
-.case-card:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 4px 20px rgba(241,196,15,.15);}
-.case-card.rare{border-color:#9b59b6;}
-.case-card.rare:hover{box-shadow:0 4px 20px rgba(155,89,182,.25);}
-.case-card.epic{border-color:#e74c3c;}
-.case-card.epic:hover{box-shadow:0 4px 20px rgba(231,76,60,.25);}
-.case-card.legendary{border-color:#f1c40f;}
-.case-card.legendary:hover{box-shadow:0 4px 20px rgba(241,196,15,.35);}
-.case-emoji{font-size:36px;margin-bottom:6px;}
-.case-name{font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;margin-bottom:4px;line-height:1.3;}
-.case-price{font-family:'Unbounded',sans-serif;font-size:11px;color:var(--acc);font-weight:700;}
-.item-preview{display:flex;align-items:center;gap:8px;background:var(--card2);border-radius:8px;padding:6px 10px;border-left:3px solid #555;}
-.item-preview.common{border-left-color:#95a5a6;}
-.item-preview.rare{border-left-color:#3498db;}
-.item-preview.epic{border-left-color:#9b59b6;}
-.item-preview.legendary{border-left-color:#f1c40f;}
-.item-preview-emoji{font-size:20px;}
-.item-preview-info{text-align:left;}
-.item-preview-name{font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;}
-.item-preview-val{font-family:'Unbounded',sans-serif;font-size:10px;color:var(--acc);}
-.item-preview-chance{font-family:'Unbounded',sans-serif;font-size:8px;color:#666;margin-left:auto;}
-.reel-item{flex-shrink:0;width:76px;height:76px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--border);background:var(--card2);font-size:28px;}
-.reel-item.common{border-color:#95a5a6;}
-.reel-item.rare{border-color:#3498db;}
-.reel-item.epic{border-color:#9b59b6;}
-.reel-item.legendary{border-color:#f1c40f;background:rgba(241,196,15,.1);}
+/* BLACKJACK */
 .bj-table{background:linear-gradient(135deg,#0a2010,#0d3318);border:2px solid #1a5c2e;border-radius:16px;padding:16px;margin:10px 0 16px;}
 .bj-lbl{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-family:'Unbounded',sans-serif;}
 .bj-cards{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;}
@@ -180,20 +148,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;text-align:
   <div class="gcard" style="padding:10px 8px;">
     <div class="gtitle" style="margin-bottom:6px;">🔴 Рулетка</div>
     <div class="rl-hist" id="rl-history"></div>
-
-    <!-- КОЛЕСО -->
-    <div class="rlw-outer" id="rlw-outer">
-      <div class="rlw-gold-ring"></div>
-      <div class="rlw-inner-ring"></div>
-      <div class="rlw-canvas-wrap" id="rlw-wrap">
-        <canvas id="rlw-canvas" style="width:100%;height:100%;"></canvas>
-      </div>
-      <div class="rlw-ball-track" id="rlw-ball-track">
-        <div class="rlw-ball" id="rlw-ball"></div>
-      </div>
-      <div class="rlw-center"></div>
-    </div>
-
     <div class="rl-res">
       <span style="font-family:'Unbounded',sans-serif;font-size:10px;color:#888;">ВЫПАЛО:</span>
       <span class="rl-num" id="rl-num">—</span>
@@ -293,45 +247,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;text-align:
   </div>
 </div>
 
-<!-- CASES PAGE -->
-<div id="cases-page" class="page">
-  <div class="gcard" id="cases-list-view">
-    <div class="gtitle">📦 Кейсы</div>
-    <div id="cases-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
-  </div>
-
-  <!-- Открытие кейса -->
-  <div class="gcard" id="case-open-view" style="display:none;">
-    <button onclick="caseBack()" style="background:none;border:none;color:#888;font-family:'Unbounded',sans-serif;font-size:11px;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;gap:5px;">← НАЗАД</button>
-    <div class="gtitle" id="case-open-title"></div>
-    <div id="case-open-img" style="font-size:64px;margin:10px 0;"></div>
-    <div style="font-family:'Unbounded',sans-serif;font-size:12px;color:#888;margin-bottom:6px;">Содержимое кейса:</div>
-    <div id="case-items-preview" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"></div>
-    <div style="font-family:'Unbounded',sans-serif;font-size:11px;color:#888;margin-bottom:12px;">Стоимость открытия: <span id="case-price-lbl" style="color:var(--acc);font-weight:700;"></span></div>
-    <button class="btn btn-yel" id="case-open-btn" onclick="openCase()">🔓 ОТКРЫТЬ КЕЙС</button>
-
-    <!-- Анимация открытия -->
-    <div id="case-anim" style="display:none;margin:20px 0;">
-      <div style="font-family:'Unbounded',sans-serif;font-size:12px;color:#888;margin-bottom:12px;">Крутим...</div>
-      <div id="case-reel-wrap" style="position:relative;overflow:hidden;border:2px solid var(--border);border-radius:12px;height:90px;">
-        <div id="case-reel" style="display:flex;gap:6px;padding:6px;transition:transform 4s cubic-bezier(.17,.67,.05,1);will-change:transform;"></div>
-        <div style="position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);width:2px;background:var(--acc);z-index:5;"></div>
-        <div style="position:absolute;inset:0;background:linear-gradient(90deg,var(--card) 0%,transparent 20%,transparent 80%,var(--card) 100%);pointer-events:none;z-index:4;"></div>
-      </div>
-    </div>
-
-    <!-- Результат -->
-    <div id="case-result" style="display:none;margin-top:16px;padding:16px;border-radius:14px;text-align:center;"></div>
-  </div>
-</div>
-
 <!-- NAV -->
 <div class="nav-bar">
   <div class="nav-item active" id="nav-wheel" onclick="showPage('wheel-page','nav-wheel')"><span class="ni">🎡</span>Колесо</div>
   <div class="nav-item" id="nav-rl" onclick="showPage('roulette-page','nav-rl')"><span class="ni">🔴</span>Рулетка</div>
   <div class="nav-item" id="nav-bj" onclick="showPage('bj-page','nav-bj')"><span class="ni">🃏</span>21</div>
   <div class="nav-item" id="nav-av" onclick="showPage('av-page','nav-av')"><span class="ni">✈️</span>Авиатор</div>
-  <div class="nav-item" id="nav-cases" onclick="showPage('cases-page','nav-cases')"><span class="ni">📦</span>Кейсы</div>
 </div>
 
 <script>
@@ -360,7 +281,6 @@ function showPage(pid,nid){
   document.getElementById(pid).classList.add('active');
   document.getElementById(nid).classList.add('active');
   if(pid==='av-page'&&avCv) avResizeCv();
-  if(pid==='roulette-page'&&!rlwCv) setTimeout(rlwInit,50);
 }
 
 async function updateBal(){
@@ -417,101 +337,6 @@ function startBonusTimer(err){
   const iv=setInterval(()=>{s--;const mm=Math.floor(s/60),ss=s%60;tel.innerHTML=`Бонус через <span>${mm}:${ss.toString().padStart(2,'0')}</span>`;if(s<=0){clearInterval(iv);tel.innerHTML='';btn.disabled=false;}},1000);
 }
 
-/* ═══════════ ROULETTE WHEEL ═══════════ */
-const RLW_ORDER=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
-let rlwCv=null,rlwCtx=null,rlwAngle=0;
-
-function rlwInit(){
-  const wrap=document.getElementById('rlw-wrap');
-  const W=wrap.offsetWidth||188,H=wrap.offsetHeight||188;
-  rlwCv=document.getElementById('rlw-canvas');
-  const dpr=window.devicePixelRatio||1;
-  rlwCv.width=W*dpr;rlwCv.height=H*dpr;
-  rlwCv.style.width=W+'px';rlwCv.style.height=H+'px';
-  rlwCtx=rlwCv.getContext('2d');rlwCtx.scale(dpr,dpr);
-  rlwDraw(W,H);
-}
-
-function rlwDraw(W,H){
-  const cx=W/2,cy=H/2,r=Math.min(W,H)/2-1;
-  const n=RLW_ORDER.length,a=2*Math.PI/n;
-  rlwCtx.clearRect(0,0,W,H);
-  RLW_ORDER.forEach((num,i)=>{
-    const s=i*a-Math.PI/2,e=s+a;
-    // Сектор
-    rlwCtx.beginPath();rlwCtx.moveTo(cx,cy);rlwCtx.arc(cx,cy,r,s,e);rlwCtx.closePath();
-    rlwCtx.fillStyle=num===0?'#1a7a3a':RL_RED.has(num)?'#8b1a1a':'#1a1a1a';
-    rlwCtx.fill();
-    rlwCtx.strokeStyle='rgba(255,215,0,0.3)';rlwCtx.lineWidth=0.5;rlwCtx.stroke();
-    // Текст
-    const tm=(i+.5)*a-Math.PI/2;
-    const tx=cx+(r*.78)*Math.cos(tm),ty=cy+(r*.78)*Math.sin(tm);
-    rlwCtx.save();rlwCtx.translate(tx,ty);rlwCtx.rotate(tm+Math.PI/2);
-    rlwCtx.fillStyle='white';rlwCtx.font=`bold ${r<90?9:10}px Inter,sans-serif`;
-    rlwCtx.textAlign='center';rlwCtx.textBaseline='middle';rlwCtx.fillText(num,0,0);
-    rlwCtx.restore();
-  });
-  // Внутренний круг
-  const grad=rlwCtx.createRadialGradient(cx,cy,r*.35,cx,cy,r*.55);
-  grad.addColorStop(0,'#8B4513');grad.addColorStop(1,'transparent');
-  rlwCtx.beginPath();rlwCtx.arc(cx,cy,r*.55,0,2*Math.PI);
-  rlwCtx.fillStyle='rgba(80,40,10,0.6)';rlwCtx.fill();
-}
-
-function rlwSpin(targetNum, onDone){
-  // Колесо стоит неподвижно.
-  // Шарик крутится по внешнему кольцу и останавливается на секторе targetNum.
-  // Находим угол центра нужного сектора на canvas (нарисован начиная с -PI/2).
-  const idx=RLW_ORDER.indexOf(targetNum);
-  const n=RLW_ORDER.length, sectorDeg=360/n;
-  // Угол центра сектора (в градусах, 0 = правая сторона в обычных координатах).
-  // Canvas рисует первый сектор начиная с -90° (верх), поэтому:
-  const sectorCenterDeg = idx * sectorDeg + sectorDeg/2 - 90;
-
-  // Радиус орбиты шарика — чуть внутрь от золотого кольца
-  const track = document.getElementById('rlw-ball-track');
-  const tw = track.offsetWidth || 204;
-  const ballR = tw/2 - 7; // радиус орбиты
-
-  const ball = document.getElementById('rlw-ball');
-  ball.style.display = 'block';
-
-  const totalDur = 7000; // 7 секунд
-  // Шарик крутится против часовой, делает ~10 оборотов, потом тормозит.
-  // Итоговый угол шарика должен совпасть с sectorCenterDeg.
-  const totalRotations = 10;
-  // startAngle произвольный (например 270° = верх)
-  const startAngle = 270;
-  // Нам нужно чтобы финальный угол = sectorCenterDeg
-  // Шарик крутится против часовой: angle = startAngle - progress*totalDeg
-  // Итого пройдёт: totalDeg градусов.
-  // Финальный угол: startAngle - totalDeg = sectorCenterDeg (mod 360)
-  // Подбираем totalDeg:
-  let diff = (startAngle - sectorCenterDeg % 360 + 360) % 360;
-  const totalDeg = totalRotations * 360 + diff;
-
-  let start = null;
-  function step(ts){
-    if(!start) start = ts;
-    const elapsed = ts - start;
-    const prog = Math.min(elapsed / totalDur, 1);
-    // Easing: начинает быстро, плавно тормозит
-    const eased = 1 - Math.pow(1 - prog, 3);
-    const curDeg = startAngle - eased * totalDeg;
-    const rad = curDeg * Math.PI / 180;
-    const cx = tw/2, cy = tw/2;
-    ball.style.left = (cx + ballR * Math.cos(rad) - 5.5) + 'px';
-    ball.style.top  = (cy + ballR * Math.sin(rad) - 5.5) + 'px';
-    if(prog < 1){
-      requestAnimationFrame(step);
-    } else {
-      // Небольшая пауза, потом прячем шарик
-      setTimeout(()=>{ ball.style.display='none'; if(onDone) onDone(); }, 800);
-    }
-  }
-  requestAnimationFrame(step);
-}
-
 /* ═══════════ ROULETTE ═══════════ */
 const RL_RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 (function(){
@@ -540,17 +365,15 @@ async function rlBet(type){
     if(!r.ok){showToast(d.error||'Ошибка','lose');rlBusy=false;return;}
     const num=d.number,isRed=RL_RED.has(num);
     const col=num===0?'#2ecc71':isRed?'#e74c3c':'#bbb';
-    // Крутим колесо, результат показываем после
-    rlwSpin(num,()=>{
-      const el=document.getElementById('rl-num');el.textContent=num;el.style.color=col;
-      document.querySelectorAll('.rl-nc').forEach(c=>{c.classList.remove('hit');if(parseInt(c.dataset.n)===num)c.classList.add('hit');});
-      setTimeout(()=>document.querySelectorAll('.rl-nc').forEach(c=>c.classList.remove('hit')),4000);
-      rlHist.unshift({num});if(rlHist.length>12)rlHist.pop();renderRlHist();updateBal();
-      if(d.win>0)showToast(`🏆 +${d.win.toLocaleString('ru-RU')} монет!`,'win');
-      else showToast('💸 Не повезло...','lose');
-      rlBusy=false;
-    });
-  }catch(e){showToast('Ошибка сервера','lose');rlBusy=false;}
+    const el=document.getElementById('rl-num');el.textContent=num;el.style.color=col;
+    document.querySelectorAll('.rl-nc').forEach(c=>{c.classList.remove('hit');if(parseInt(c.dataset.n)===num)c.classList.add('hit');});
+    setTimeout(()=>document.querySelectorAll('.rl-nc').forEach(c=>c.classList.remove('hit')),4000);
+    rlHist.unshift({num});if(rlHist.length>12)rlHist.pop();
+    renderRlHist();updateBal();
+    if(d.win>0)showToast(`🏆 +${d.win.toLocaleString('ru-RU')} монет!`,'win');
+    else showToast('💸 Не повезло...','lose');
+  }catch(e){showToast('Ошибка сервера','lose');}
+  rlBusy=false;
 }
 function renderRlHist(){
   const el=document.getElementById('rl-history');
@@ -757,259 +580,6 @@ function renderAvHist(){
     return `<span class="av-hi ${cls}">${v}x</span>`;
   }).join('');
 }
-
-/* ═══════════ CASES ═══════════ */
-const CASES = [
-  {
-    id:'starter', name:'Стартовый', emoji:'📦', price:500, rarity:'common',
-    items:[
-      {emoji:'💵',name:'Монеты x1.5',value:750,rarity:'common',chance:45},
-      {emoji:'🎟️',name:'Монеты x2',value:1000,rarity:'common',chance:30},
-      {emoji:'💎',name:'Монеты x3',value:1500,rarity:'rare',chance:16},
-      {emoji:'🌟',name:'Монеты x5',value:2500,rarity:'epic',chance:7},
-      {emoji:'👑',name:'Джекпот x10',value:5000,rarity:'legendary',chance:2},
-    ]
-  },
-  {
-    id:'silver', name:'Серебряный', emoji:'🥈', price:1000, rarity:'common',
-    items:[
-      {emoji:'💵',name:'Монеты x1.2',value:1200,rarity:'common',chance:40},
-      {emoji:'🎟️',name:'Монеты x2',value:2000,rarity:'common',chance:28},
-      {emoji:'💎',name:'Монеты x3',value:3000,rarity:'rare',chance:18},
-      {emoji:'🌟',name:'Монеты x5',value:5000,rarity:'epic',chance:10},
-      {emoji:'👑',name:'Джекпот x12',value:12000,rarity:'legendary',chance:4},
-    ]
-  },
-  {
-    id:'gold', name:'Золотой', emoji:'🥇', price:2500, rarity:'rare',
-    items:[
-      {emoji:'💵',name:'Монеты x1.5',value:3750,rarity:'common',chance:35},
-      {emoji:'🎟️',name:'Монеты x2',value:5000,rarity:'common',chance:28},
-      {emoji:'💎',name:'Монеты x3',value:7500,rarity:'rare',chance:20},
-      {emoji:'🌟',name:'Монеты x6',value:15000,rarity:'epic',chance:12},
-      {emoji:'👑',name:'Джекпот x15',value:37500,rarity:'legendary',chance:5},
-    ]
-  },
-  {
-    id:'diamond', name:'Алмазный', emoji:'💎', price:5000, rarity:'rare',
-    items:[
-      {emoji:'💵',name:'Монеты x1.5',value:7500,rarity:'common',chance:30},
-      {emoji:'🎟️',name:'Монеты x2',value:10000,rarity:'common',chance:25},
-      {emoji:'💫',name:'Монеты x3',value:15000,rarity:'rare',chance:22},
-      {emoji:'🌟',name:'Монеты x6',value:30000,rarity:'epic',chance:15},
-      {emoji:'👑',name:'Джекпот x20',value:100000,rarity:'legendary',chance:8},
-    ]
-  },
-  {
-    id:'cyber', name:'Кибер', emoji:'🤖', price:3000, rarity:'rare',
-    items:[
-      {emoji:'⚡',name:'Энергия x1.5',value:4500,rarity:'common',chance:38},
-      {emoji:'🔧',name:'Буст x2',value:6000,rarity:'common',chance:27},
-      {emoji:'💻',name:'Хак x3',value:9000,rarity:'rare',chance:20},
-      {emoji:'🚀',name:'Турбо x5',value:15000,rarity:'epic',chance:10},
-      {emoji:'🛸',name:'Мега x20',value:60000,rarity:'legendary',chance:5},
-    ]
-  },
-  {
-    id:'pirate', name:'Пиратский', emoji:'☠️', price:1500, rarity:'common',
-    items:[
-      {emoji:'🗡️',name:'Сабля x1.5',value:2250,rarity:'common',chance:40},
-      {emoji:'⚓',name:'Якорь x2',value:3000,rarity:'common',chance:28},
-      {emoji:'🗺️',name:'Карта x3',value:4500,rarity:'rare',chance:18},
-      {emoji:'💰',name:'Сундук x5',value:7500,rarity:'epic',chance:10},
-      {emoji:'👑',name:'Корона x15',value:22500,rarity:'legendary',chance:4},
-    ]
-  },
-  {
-    id:'space', name:'Космический', emoji:'🚀', price:4000, rarity:'epic',
-    items:[
-      {emoji:'🌙',name:'Луна x1.5',value:6000,rarity:'common',chance:32},
-      {emoji:'⭐',name:'Звезда x2',value:8000,rarity:'common',chance:26},
-      {emoji:'🪐',name:'Сатурн x3',value:12000,rarity:'rare',chance:22},
-      {emoji:'☄️',name:'Комета x6',value:24000,rarity:'epic',chance:14},
-      {emoji:'🌌',name:'Галактика x25',value:100000,rarity:'legendary',chance:6},
-    ]
-  },
-  {
-    id:'mystery', name:'Тайный', emoji:'🎭', price:2000, rarity:'rare',
-    items:[
-      {emoji:'🎪',name:'Маска x1',value:1000,rarity:'common',chance:25},
-      {emoji:'🃏',name:'Джокер x2',value:4000,rarity:'common',chance:30},
-      {emoji:'🎩',name:'Шляпа x3',value:6000,rarity:'rare',chance:22},
-      {emoji:'🔮',name:'Шар x5',value:10000,rarity:'epic',chance:15},
-      {emoji:'✨',name:'Удача x20',value:40000,rarity:'legendary',chance:8},
-    ]
-  },
-  {
-    id:'vip', name:'VIP', emoji:'🎩', price:10000, rarity:'epic',
-    items:[
-      {emoji:'🥂',name:'Шампань x1.5',value:15000,rarity:'common',chance:28},
-      {emoji:'💍',name:'Кольцо x2',value:20000,rarity:'common',chance:24},
-      {emoji:'🏎️',name:'Авто x4',value:40000,rarity:'rare',chance:22},
-      {emoji:'🛥️',name:'Яхта x8',value:80000,rarity:'epic',chance:16},
-      {emoji:'🏆',name:'Трофей x30',value:300000,rarity:'legendary',chance:10},
-    ]
-  },
-  {
-    id:'legendary', name:'Легендарный', emoji:'🔱', price:25000, rarity:'legendary',
-    items:[
-      {emoji:'💵',name:'Монеты x1.5',value:37500,rarity:'common',chance:20},
-      {emoji:'💎',name:'Бриллиант x3',value:75000,rarity:'rare',chance:25},
-      {emoji:'🌟',name:'Суперзвезда x5',value:125000,rarity:'epic',chance:30},
-      {emoji:'🔥',name:'Инферно x10',value:250000,rarity:'epic',chance:18},
-      {emoji:'⚡',name:'Молния Зевса x50',value:1250000,rarity:'legendary',chance:7},
-    ]
-  },
-];
-
-let currentCaseId = null;
-
-function buildCasesGrid(){
-  const grid = document.getElementById('cases-grid');
-  grid.innerHTML = '';
-  CASES.forEach(c=>{
-    const div = document.createElement('div');
-    div.className = `case-card ${c.rarity}`;
-    div.innerHTML = `
-      <div class="case-emoji">${c.emoji}</div>
-      <div class="case-name">${c.name}</div>
-      <div class="case-price">💰 ${c.price.toLocaleString('ru-RU')}</div>
-    `;
-    div.onclick = ()=>openCaseView(c.id);
-    grid.appendChild(div);
-  });
-}
-
-function openCaseView(caseId){
-  const c = CASES.find(x=>x.id===caseId);
-  if(!c) return;
-  currentCaseId = caseId;
-  document.getElementById('cases-list-view').style.display='none';
-  document.getElementById('case-open-view').style.display='block';
-  document.getElementById('case-open-title').textContent = c.emoji+' '+c.name;
-  document.getElementById('case-open-img').textContent = c.emoji;
-  document.getElementById('case-price-lbl').textContent = c.price.toLocaleString('ru-RU')+' монет';
-  document.getElementById('case-anim').style.display='none';
-  document.getElementById('case-result').style.display='none';
-  document.getElementById('case-open-btn').style.display='block';
-  // Показываем содержимое
-  const preview = document.getElementById('case-items-preview');
-  preview.innerHTML = c.items.map(it=>`
-    <div class="item-preview ${it.rarity}">
-      <span class="item-preview-emoji">${it.emoji}</span>
-      <div class="item-preview-info">
-        <div class="item-preview-name">${it.name}</div>
-        <div class="item-preview-val">+${it.value.toLocaleString('ru-RU')} монет</div>
-      </div>
-      <span class="item-preview-chance">${it.chance}%</span>
-    </div>
-  `).join('');
-}
-
-function caseBack(){
-  document.getElementById('cases-list-view').style.display='block';
-  document.getElementById('case-open-view').style.display='none';
-  currentCaseId = null;
-}
-
-function pickCaseItem(c){
-  const rand = Math.random()*100;
-  let cum = 0;
-  for(const it of c.items){
-    cum += it.chance;
-    if(rand < cum) return it;
-  }
-  return c.items[c.items.length-1];
-}
-
-function buildReel(c, winner){
-  const reel = document.getElementById('case-reel');
-  reel.style.transition = 'none';
-  reel.style.transform = 'translateX(0)';
-  reel.innerHTML = '';
-  // Генерируем 40 случайных предметов + победитель в середине (позиция 30)
-  const all = [];
-  for(let i=0;i<40;i++){
-    const r=Math.random()*100; let cum=0; let picked=c.items[0];
-    for(const it of c.items){cum+=it.chance;if(r<cum){picked=it;break;}}
-    all.push(picked);
-  }
-  all[30] = winner; // победитель на позиции 30
-  all.forEach(it=>{
-    const div = document.createElement('div');
-    div.className = `reel-item ${it.rarity}`;
-    div.textContent = it.emoji;
-    reel.appendChild(div);
-  });
-  return 30; // индекс победителя
-}
-
-async function openCase(){
-  if(!currentCaseId) return;
-  const c = CASES.find(x=>x.id===currentCaseId);
-  if(!c) return;
-  try{
-    const r = await api('/open_case',{method:'POST',body:JSON.stringify({user_id:getUid(),case_id:currentCaseId,price:c.price})});
-    const d = await r.json();
-    if(!r.ok) return showToast(d.error||'Ошибка','lose');
-    const winner = c.items.find(it=>it.value===d.prize_value) || pickCaseItem(c);
-    startCaseAnim(c, winner);
-  }catch(e){
-    showToast('Ошибка сервера','lose');
-  }
-}
-
-function startCaseAnim(c, winner){
-  document.getElementById('case-open-btn').style.display='none';
-  document.getElementById('case-anim').style.display='block';
-  document.getElementById('case-result').style.display='none';
-
-  const winIdx = buildReel(c, winner);
-  const itemW = 76+6; // ширина + gap
-  const reelWrap = document.getElementById('case-reel-wrap');
-  const wrapW = reelWrap.offsetWidth || 320;
-  // Центрируем победителя: смещаем рил так чтобы winIdx оказался по центру
-  const offset = winIdx * itemW - wrapW/2 + itemW/2;
-
-  requestAnimationFrame(()=>{
-    requestAnimationFrame(()=>{
-      const reel = document.getElementById('case-reel');
-      reel.style.transition = 'transform 4s cubic-bezier(.17,.67,.05,1)';
-      reel.style.transform = `translateX(-${offset}px)`;
-    });
-  });
-
-  setTimeout(()=>{
-    showCaseResult(winner);
-  }, 4400);
-}
-
-function showCaseResult(winner){
-  document.getElementById('case-anim').style.display='none';
-  const result = document.getElementById('case-result');
-  const colors = {common:'#95a5a6',rare:'#3498db',epic:'#9b59b6',legendary:'#f1c40f'};
-  const col = colors[winner.rarity]||'#fff';
-  const rarityNames = {common:'Обычный',rare:'Редкий',epic:'Эпический',legendary:'Легендарный'};
-  result.style.display='block';
-  result.style.border=`2px solid ${col}`;
-  result.style.background=`rgba(0,0,0,.4)`;
-  result.innerHTML=`
-    <div style="font-size:52px;margin-bottom:8px;">${winner.emoji}</div>
-    <div style="font-family:'Unbounded',sans-serif;font-size:14px;font-weight:700;color:${col};margin-bottom:4px;">${winner.name}</div>
-    <div style="font-family:'Unbounded',sans-serif;font-size:11px;color:#888;margin-bottom:8px;">${rarityNames[winner.rarity]||''}</div>
-    <div style="font-family:'Unbounded',sans-serif;font-size:20px;font-weight:900;color:var(--acc);">+${winner.value.toLocaleString('ru-RU')} монет</div>
-  `;
-  showToast(`${winner.emoji} ${winner.name} — +${winner.value.toLocaleString('ru-RU')} монет`, winner.rarity==='legendary'?'win':'info', 5000);
-  updateBal();
-  // Кнопка ещё раз
-  setTimeout(()=>{
-    const btn=document.getElementById('case-open-btn');
-    btn.style.display='block';
-    btn.textContent='🔓 ОТКРЫТЬ ЕЩЁ РАЗ';
-  }, 1000);
-}
-
-buildCasesGrid();
 
 /* ═══════════ INIT ═══════════ */
 updateBal();

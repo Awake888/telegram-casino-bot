@@ -53,7 +53,7 @@
         .rl-wrap{position:relative;width:260px;height:260px;margin:0 auto 10px;}
         .rl-ptr{position:absolute;top:-2px;left:50%;transform:translateX(-50%);font-size:20px;color:var(--accent);z-index:20;line-height:1;}
         .rl-svg{width:100%;height:100%;transition:transform 5s cubic-bezier(.15,0,.1,1);}
-        .rl-ball{position:absolute;width:12px;height:12px;background:white;border-radius:50%;z-index:15;pointer-events:none;box-shadow:0 0 6px rgba(255,255,255,.7);}
+        .rl-ball{position:absolute;width:12px;height:12px;background:white;border-radius:50%;z-index:15;pointer-events:none;box-shadow:0 0 6px rgba(255,255,255,.7);display:none;}
         .rl-num{font-family:'Unbounded',sans-serif;font-size:38px;font-weight:900;margin:6px 0;transition:color .3s;}
         .rl-bets{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:8px;}
         /* Number picker */
@@ -154,7 +154,7 @@
         <div id="rl-simple" class="rl-bets">
             <button class="btn btn-red" onclick="playRoulette('red')">🔴 КРАСНОЕ x2</button>
             <button class="btn btn-black" onclick="playRoulette('black')">⚫ ЧЁРНОЕ x2</button>
-            <button class="btn btn-green" onclick="playRoulette('green')">💚 ЗЕРО x14</button>
+            <button class="btn btn-green" onclick="playRoulette('green')">💚 ЗЕРО x35</button>
             <button class="btn" style="background:linear-gradient(135deg,#8e44ad,#9b59b6)" onclick="playRoulette('even')">ЧЁТ x2</button>
             <button class="btn" style="background:linear-gradient(135deg,#16a085,#1abc9c)" onclick="playRoulette('odd')">НЕЧЕТ x2</button>
         </div>
@@ -402,13 +402,15 @@ async function playRoulette(type){
 function animateBall(dur,onDone){
     const ball=document.getElementById('rl-ball'),wrap=document.getElementById('rl-wrap');
     const tw=wrap.offsetWidth||260,cx=tw/2,cy=tw/2,r=tw/2-9;
+    ball.style.display='block';
     let start=null,ba=0;
     function step(ts){
         if(!start)start=ts;
         const prog=Math.min((ts-start)/dur,1),spd=(1-prog)*.05+.003;
         ba+=spd*60;
         ball.style.left=(cx+r*Math.cos(ba)-6)+'px';ball.style.top=(cy+r*Math.sin(ba)-6)+'px';
-        if(prog<1)requestAnimationFrame(step);else if(onDone)onDone();
+        if(prog<1)requestAnimationFrame(step);
+        else{ball.style.display='none';if(onDone)onDone();}
     }
     requestAnimationFrame(step);
 }
@@ -587,13 +589,17 @@ async function avCashout(){
     if(!avBetPlaced||avCashedOut||avState!=='flying')return;
     const uid=getUserId();avCashedOut=true;
     const win=Math.floor(avBetAmt*avMul);
+    const cashedMul=avMul.toFixed(2);
     try{
         const r=await api('/play_aviator_cashout',{method:'POST',body:JSON.stringify({user_id:uid,bet:avBetAmt,multiplier:avMul})});
         const d=await r.json();if(!r.ok)return showToast(d.error||'Ошибка','lose');
-        showToast(`🤑 x${avMul.toFixed(2)}! +${win.toLocaleString('ru-RU')} монет`,'win',4000);updateUI();
+        showToast(`🤑 x${cashedMul}! +${win.toLocaleString('ru-RU')} монет`,'win',4000);updateUI();
     }catch(e){showToast('Ошибка сервера','lose');}
     document.getElementById('av-btn-cashout').style.display='none';
-    document.getElementById('av-status').textContent=`Забрал x${avMul.toFixed(2)}! Ждём...`;
+    // Показываем кнопку ПОСТАВИТЬ снова — чтобы можно было ставить в следующем раунде вручную
+    document.getElementById('av-btn-bet').style.display='block';
+    document.getElementById('av-btn-bet').disabled=true; // заблокирована пока летим
+    document.getElementById('av-status').textContent=`Забрал x${cashedMul}! Ждём...`;
 }
 
 function renderAvHist(){

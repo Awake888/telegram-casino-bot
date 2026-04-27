@@ -50,12 +50,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;text-align:
 .rlw-outer{position:relative;width:220px;height:220px;margin:0 auto 14px;}
 .rlw-gold-ring{position:absolute;inset:0;border-radius:50%;background:conic-gradient(#b8860b,#ffd700,#daa520,#ffd700,#b8860b,#ffd700,#daa520,#ffd700,#b8860b);box-shadow:0 0 20px rgba(255,215,0,.5),inset 0 0 10px rgba(0,0,0,.5);}
 .rlw-inner-ring{position:absolute;inset:8px;border-radius:50%;background:conic-gradient(#8B4513,#A0522D,#8B4513,#A0522D,#8B4513);box-shadow:inset 0 0 15px rgba(0,0,0,.6);}
-.rlw-canvas-wrap{position:absolute;inset:16px;border-radius:50%;overflow:hidden;transition:transform 5s cubic-bezier(.15,0,.1,1);}
-.rlw-ball-track{position:absolute;inset:14px;border-radius:50%;pointer-events:none;z-index:10;}
-.rlw-ball{position:absolute;width:10px;height:10px;background:radial-gradient(circle at 35% 35%,#fff,#ccc);border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.6);display:none;top:50%;left:50%;transform:translate(-50%,-50%);}
+.rlw-canvas-wrap{position:absolute;inset:16px;border-radius:50%;overflow:hidden;}
+.rlw-ball-track{position:absolute;inset:8px;border-radius:50%;pointer-events:none;z-index:10;}
+.rlw-ball{position:absolute;width:11px;height:11px;background:radial-gradient(circle at 35% 35%,#fff,#ddd);border-radius:50%;box-shadow:0 1px 5px rgba(0,0,0,.8),0 0 4px rgba(255,255,255,.6);display:none;}
 .rlw-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:radial-gradient(circle at 40% 35%,#e8c84a,#b8860b,#7a5c00);border-radius:50%;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.6),0 0 0 3px #daa520;}
-.rlw-spokes{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;z-index:19;}
-.rlw-ptr{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:25;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:16px solid #ffd700;filter:drop-shadow(0 0 4px rgba(255,215,0,.8));}
 .rl-res{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px;}
 .rl-num{font-family:'Unbounded',sans-serif;font-size:28px;font-weight:900;transition:color .3s;}
 .rl-outer{background:linear-gradient(160deg,#0c5c22,#0a3d18);border:3px solid #1a7a3a;border-radius:14px;padding:8px 6px;overflow-x:auto;box-shadow:0 0 30px rgba(0,120,50,.3);}
@@ -168,7 +166,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;text-align:
         <div class="rlw-ball" id="rlw-ball"></div>
       </div>
       <div class="rlw-center"></div>
-      <div class="rlw-ptr"></div>
     </div>
 
     <div class="rl-res">
@@ -403,42 +400,55 @@ function rlwDraw(W,H){
 }
 
 function rlwSpin(targetNum, onDone){
+  // Колесо стоит неподвижно.
+  // Шарик крутится по внешнему кольцу и останавливается на секторе targetNum.
+  // Находим угол центра нужного сектора на canvas (нарисован начиная с -PI/2).
   const idx=RLW_ORDER.indexOf(targetNum);
   const n=RLW_ORDER.length, sectorDeg=360/n;
-  // Центр нужного сектора должен оказаться сверху (0°).
-  // Сектор idx начинается с idx*sectorDeg (при начальном offset -90°),
-  // его центр находится на (idx + 0.5) * sectorDeg градусов от начала.
-  // Чтобы этот центр попал под указатель (верх = 0°),
-  // нужно повернуть колесо так, чтобы этот угол стал равен 0.
-  const sectorCenter=(idx+0.5)*sectorDeg; // угол центра сектора на колесе
-  // Текущий остаток поворота
-  const currentMod=rlwAngle%360;
-  // Сколько нужно добавить, чтобы sectorCenter оказался сверху
-  let extra=(360-sectorCenter-currentMod%360+360)%360;
-  if(extra<10) extra+=360; // минимум чуть больше полного оборота
-  rlwAngle+=2880+extra; // минимум 8 полных оборотов (~7 сек)
-  const wrap=document.getElementById('rlw-wrap');
-  wrap.style.transition='transform 7s cubic-bezier(.25,.01,.05,1)';
-  wrap.style.transform=`rotate(${rlwAngle}deg)`;
-  rlwAnimBall(7000,()=>{if(onDone)onDone();});
-}
+  // Угол центра сектора (в градусах, 0 = правая сторона в обычных координатах).
+  // Canvas рисует первый сектор начиная с -90° (верх), поэтому:
+  const sectorCenterDeg = idx * sectorDeg + sectorDeg/2 - 90;
 
-function rlwAnimBall(dur,onDone){
-  const ball=document.getElementById('rlw-ball');
-  const track=document.getElementById('rlw-ball-track');
-  const tw=track.offsetWidth||188, r=tw/2-10;
-  ball.style.display='block';
-  let start=null, ba=0;
+  // Радиус орбиты шарика — чуть внутрь от золотого кольца
+  const track = document.getElementById('rlw-ball-track');
+  const tw = track.offsetWidth || 204;
+  const ballR = tw/2 - 7; // радиус орбиты
+
+  const ball = document.getElementById('rlw-ball');
+  ball.style.display = 'block';
+
+  const totalDur = 7000; // 7 секунд
+  // Шарик крутится против часовой, делает ~10 оборотов, потом тормозит.
+  // Итоговый угол шарика должен совпасть с sectorCenterDeg.
+  const totalRotations = 10;
+  // startAngle произвольный (например 270° = верх)
+  const startAngle = 270;
+  // Нам нужно чтобы финальный угол = sectorCenterDeg
+  // Шарик крутится против часовой: angle = startAngle - progress*totalDeg
+  // Итого пройдёт: totalDeg градусов.
+  // Финальный угол: startAngle - totalDeg = sectorCenterDeg (mod 360)
+  // Подбираем totalDeg:
+  let diff = (startAngle - sectorCenterDeg % 360 + 360) % 360;
+  const totalDeg = totalRotations * 360 + diff;
+
+  let start = null;
   function step(ts){
-    if(!start)start=ts;
-    const prog=Math.min((ts-start)/dur,1);
-    // Плавное замедление: скорость убывает по кубической кривой
-    const spd=Math.pow(1-prog,1.5)*.12+.003;
-    ba-=spd*60;
-    ball.style.left=(tw/2+r*Math.cos(ba*Math.PI/180)-5)+'px';
-    ball.style.top=(tw/2+r*Math.sin(ba*Math.PI/180)-5)+'px';
-    if(prog<1)requestAnimationFrame(step);
-    else{ball.style.display='none';if(onDone)onDone();}
+    if(!start) start = ts;
+    const elapsed = ts - start;
+    const prog = Math.min(elapsed / totalDur, 1);
+    // Easing: начинает быстро, плавно тормозит
+    const eased = 1 - Math.pow(1 - prog, 3);
+    const curDeg = startAngle - eased * totalDeg;
+    const rad = curDeg * Math.PI / 180;
+    const cx = tw/2, cy = tw/2;
+    ball.style.left = (cx + ballR * Math.cos(rad) - 5.5) + 'px';
+    ball.style.top  = (cy + ballR * Math.sin(rad) - 5.5) + 'px';
+    if(prog < 1){
+      requestAnimationFrame(step);
+    } else {
+      // Небольшая пауза, потом прячем шарик
+      setTimeout(()=>{ ball.style.display='none'; if(onDone) onDone(); }, 800);
+    }
   }
   requestAnimationFrame(step);
 }

@@ -786,12 +786,13 @@ async function doOpenCase(fast){
     document.getElementById('case-fast-btn').style.display='inline-block';
     return showToast('Ошибка сервера','lose');
   }
-  // Сервер возвращает prize_index — индекс предмета в массиве items
-  const winners=prizes.map(p=>{
-    if(typeof p.prize_index==='number') return c.items[p.prize_index]||pickItem(c);
-    // fallback: ищем по значению
-    return c.items.find(it=>it.v===p.prize_value)||pickItem(c);
-  });
+  // Сервер возвращает полные данные предмета — никакого поиска по массиву
+  const winners=prizes.map(p=>({
+    e: p.emoji,
+    n: p.name,
+    v: p.prize_value,
+    r: p.rarity
+  }));
 
   if(fast){showCaseResults(winners,prizes);}
   else{startMultiReel(c,winners,prizes);}

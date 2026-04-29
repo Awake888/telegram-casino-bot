@@ -39,7 +39,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;min-height:
 .menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 10px 30px;}
 .menu-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px 12px;cursor:pointer;transition:all .2s;text-align:center;}
 .menu-card:hover{transform:translateY(-3px);}
-.menu-card-emoji{font-size:42px;margin-bottom:8px;display:block;}
+.menu-card-emoji{font-size:42px;margin-bottom:8px;display:block;font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',serif;}
 .menu-card-name{font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;margin-bottom:4px;}
 .menu-card-desc{font-size:10px;color:#555;line-height:1.4;}
 .menu-card.c1{border-color:#f1c40f33;}.menu-card.c1:hover{border-color:#f1c40f;box-shadow:0 4px 20px rgba(241,196,15,.15);}
@@ -133,7 +133,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;min-height:
 /* COIN FLIP */
 .coin-wrap{perspective:800px;width:140px;height:140px;margin:0 auto 20px;}
 .coin{width:140px;height:140px;position:relative;transform-style:preserve-3d;transform:rotateY(0deg);}
-.coin-face{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:56px;backface-visibility:hidden;}
+.coin-face{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:56px;backface-visibility:hidden;font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',serif;}
 .coin-heads{background:radial-gradient(circle at 35% 30%,#fff4a0,#ffd700,#b8860b);border:6px solid #daa520;box-shadow:0 0 0 2px #b8860b,0 8px 24px rgba(0,0,0,.5),inset 0 2px 4px rgba(255,255,255,.3);}
 .coin-tails{background:radial-gradient(circle at 35% 30%,#f0f0f0,#c0c0c0,#707070);border:6px solid #a0a0a0;box-shadow:0 0 0 2px #808080,0 8px 24px rgba(0,0,0,.5),inset 0 2px 4px rgba(255,255,255,.3);transform:rotateY(180deg);}
 @keyframes flipCoin{
@@ -724,7 +724,7 @@ function pickItem(c){
   CASES.forEach(c=>{
     const d=document.createElement('div');
     d.className=`case-card ${c.rarity}`;
-    d.innerHTML=`<div class="case-emoji">${c.emoji}</div><div class="case-name">${c.name}</div><div class="case-price">💰 ${c.price.toLocaleString('ru-RU')}</div>`;
+    d.innerHTML=`<div class="case-emoji" style="font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',serif;">${c.emoji}</div><div class="case-name">${c.name}</div><div class="case-price">💰 ${c.price.toLocaleString('ru-RU')}</div>`;
     d.onclick=()=>openCaseView(c.id);g.appendChild(d);
   });
 })();
@@ -745,7 +745,7 @@ function openCaseView(caseId){
   const sorted=[...c.items].sort((a,b)=>{const o={legendary:0,epic:1,bonus:2,rare:3,penalty:4,common:5};return o[a.r]-o[b.r];});
   document.getElementById('case-contents').innerHTML=sorted.map(it=>{
     const val=typeof it.v==='number'?(it.v>0?`+${it.v.toLocaleString('ru-RU')} монет`:`${it.v.toLocaleString('ru-RU')} монет`):it.n;
-    return `<div class="item-row ${it.r}"><span style="font-size:18px">${it.e}</span><div style="flex:1;text-align:left;"><div style="font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;color:${RC[it.r]}">${it.n}</div><div style="font-family:'Unbounded',sans-serif;font-size:10px;color:${it.v<0||it.r==='penalty'?'#e74c3c':'var(--acc)'}">${val}</div></div><span style="font-family:'Unbounded',sans-serif;font-size:8px;color:#555">${it.ch}%</span></div>`;
+    return `<div class="item-row ${it.r}"><span style="font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',serif;font-size:20px;line-height:1;flex-shrink:0;">${it.e}</span><div style="flex:1;text-align:left;margin-left:8px;"><div style="font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;color:${RC[it.r]}">${it.n}</div><div style="font-family:'Unbounded',sans-serif;font-size:10px;color:${it.v<0?'#e74c3c':'var(--acc)'}">${val}</div></div><span style="font-family:'Unbounded',sans-serif;font-size:8px;color:#555">${it.ch}%</span></div>`;
   }).join('');
 }
 
@@ -786,7 +786,12 @@ async function doOpenCase(fast){
     document.getElementById('case-fast-btn').style.display='inline-block';
     return showToast('Ошибка сервера','lose');
   }
-  const winners=prizes.map(p=>c.items.find(it=>it.v===p.prize_value)||pickItem(c));
+  // Сервер возвращает prize_index — индекс предмета в массиве items
+  const winners=prizes.map(p=>{
+    if(typeof p.prize_index==='number') return c.items[p.prize_index]||pickItem(c);
+    // fallback: ищем по значению
+    return c.items.find(it=>it.v===p.prize_value)||pickItem(c);
+  });
 
   if(fast){showCaseResults(winners,prizes);}
   else{startMultiReel(c,winners,prizes);}
@@ -803,8 +808,10 @@ function buildOneReel(c,winner,container){
   all[45]=winner;
   all.forEach(it=>{
     const d=document.createElement('div');d.className=`reel-item ${it.r}`;
-    const valText=typeof it.v==='number'?(Math.abs(it.v)>=1000?Math.floor(Math.abs(it.v)/1000)+'k':Math.abs(it.v)):(it.v==='HALF'?'÷2':it.v==='MULT_15'?'x1.5':it.v==='MULT_20'?'x2':'x5');
-    d.innerHTML=`${it.e}<span class="ri-name">${it.n}</span><span class="ri-val">${it.r==='penalty'?'-':'+'}${valText}</span>`;
+    const absV=Math.abs(it.v);
+    const valText=absV>=1000000?Math.floor(absV/1000000)+'M':absV>=1000?Math.floor(absV/1000)+'k':absV;
+    const sign=it.v<0?'−':'+';
+    d.innerHTML=`<span style="font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',serif;font-size:26px;line-height:1;">${it.e}</span><span class="ri-name">${it.n}</span><span class="ri-val" style="color:${it.v<0?'#e74c3c':'#2ecc71'}">${sign}${valText}</span>`;
     track.appendChild(d);
   });
   outer.appendChild(track);outer.appendChild(ptr);outer.appendChild(fade);
@@ -857,7 +864,7 @@ function showCaseResults(winners,prizes){
     total+=pv;
     const col=pv>0?'#2ecc71':'#e74c3c';
     const card=document.createElement('div');card.className=`drop-card ${w.r}`;card.style.animationDelay=(i*70)+'ms';
-    card.innerHTML=`<span class="drop-emoji">${w.e}</span><div class="drop-info"><div class="drop-name" style="color:${RC[w.r]}">${w.n}</div><div class="drop-rarity">${RN[w.r]||w.r}</div></div><div class="drop-val" style="color:${col}">${pv>0?'+':''}${pv.toLocaleString('ru-RU')} монет</div>`;
+    card.innerHTML=`<span class="drop-emoji" style="font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',serif;">${w.e}</span><div class="drop-info"><div class="drop-name" style="color:${RC[w.r]}">${w.n}</div><div class="drop-rarity">${RN[w.r]||w.r}</div></div><div class="drop-val" style="color:${col}">${pv>0?'+':''}${pv.toLocaleString('ru-RU')} монет</div>`;
     dropsGrid.appendChild(card);
   });
   const totalEl=document.getElementById('case-res-total');

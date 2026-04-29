@@ -388,78 +388,131 @@ async def open_case(request):
     conn.close()
     return web.json_response({'ok': True, 'prizes': prizes})
 
-# СЛОТЫ BONANZA
-SLOT_SYMS = [
-    {'e':'💎','n':'Diamond','w':50,'pays':{3:5,4:15,5:30,6:60}},
-    {'e':'🔴','n':'Ruby',   'w':80,'pays':{3:3,4:8, 5:15,6:30}},
-    {'e':'🔵','n':'Sapphire','w':90,'pays':{3:2,4:5, 5:10,6:20}},
-    {'e':'🟡','n':'Gold',   'w':100,'pays':{3:2,4:4, 5:8, 6:15}},
-    {'e':'🍇','n':'Grape',  'w':130,'pays':{3:1,4:3, 5:6, 6:12}},
-    {'e':'🍋','n':'Lemon',  'w':160,'pays':{3:1,4:2, 5:4, 6:8}},
-    {'e':'🍊','n':'Orange', 'w':180,'pays':{3:1,4:2, 5:3, 6:6}},
-    {'e':'🍒','n':'Cherry', 'w':200,'pays':{3:1,4:1, 5:2, 6:4}},
-    {'e':'🌸','n':'Scatter','w':30, 'pays':{}},  # scatter = фриспины
-    {'e':'⭐','n':'Wild',   'w':40, 'pays':{}},  # wild
+# SWEET BONANZA SLOT
+SB_SYMS = [
+    {'e':'🍎','n':'Apple',  'w':180,'pays':{8:0.4,9:0.6,10:1,11:1.5,12:2,15:3,20:5,25:8}},
+    {'e':'🍇','n':'Grape',  'w':160,'pays':{8:0.5,9:0.8,10:1.2,11:2,12:3,15:5,20:8,25:12}},
+    {'e':'🍌','n':'Banana', 'w':150,'pays':{8:0.8,9:1.2,10:2,11:3,12:4,15:7,20:12,25:18}},
+    {'e':'🍑','n':'Plum',   'w':140,'pays':{8:1,9:1.5,10:2.5,11:4,12:5,15:8,20:15,25:22}},
+    {'e':'💎','n':'Diamond','w':60, 'pays':{8:2.5,9:4,10:6,11:9,12:13,15:20,20:35,25:50}},
+    {'e':'❤️','n':'Heart',  'w':130,'pays':{8:1,9:1.5,10:2.5,11:4,12:5,15:8,20:15,25:22}},
+    {'e':'🍬','n':'Candy',  'w':120,'pays':{8:1.5,9:2.5,10:4,11:6,12:8,15:15,20:25,25:35}},
+    {'e':'🟦','n':'Blue',   'w':170,'pays':{8:0.4,9:0.6,10:1,11:1.5,12:2,15:3,20:5,25:8}},
+    {'e':'🟩','n':'Green',  'w':165,'pays':{8:0.4,9:0.6,10:1,11:1.5,12:2,15:3,20:5,25:8}},
+    {'e':'🟪','n':'Purple', 'w':110,'pays':{8:1.5,9:2.5,10:4,11:6,12:8,15:15,20:25,25:35}},
+    {'e':'🍭','n':'Lolly',  'w':30, 'pays':{4:3,5:8,6:15,7:20}},  # scatter
 ]
-SCATTER_IDX=8; WILD_IDX=9
+SB_SCATTER_IDX=10
+SB_MULT_VALS=[2,3,4,5,6,7,8,10,12,15,20,25,50,100]
 
-def slot_rand_sym():
-    total=sum(s['w'] for s in SLOT_SYMS)
+def sb_rand_sym():
+    total=sum(s['w'] for s in SB_SYMS)
     r=random.uniform(0,total); cum=0
-    for i,s in enumerate(SLOT_SYMS):
+    for i,s in enumerate(SB_SYMS):
         cum+=s['w']
         if r<cum: return i
-    return len(SLOT_SYMS)-1
+    return 0
+
+def sb_gen_grid():
+    return [[sb_rand_sym() for _ in range(5)] for _ in range(6)]
+
+def sb_find_clusters(grid):
+    # Находим кластеры 8+ одинаковых символов в любом месте
+    counts={}
+    positions={}
+    for col in range(6):
+        for row in range(5):
+            s=grid[col][row]
+            if s!=SB_SCATTER_IDX:
+                counts[s]=counts.get(s,0)+1
+                if s not in positions: positions[s]=[]
+                positions[s].append((col,row))
+    clusters=[]
+    for sym,cnt in counts.items():
+        pays=SB_SYMS[sym]['pays']
+        if sym==SB_SCATTER_IDX: continue
+        thresholds=sorted([k for k in pays.keys() if k<=cnt],reverse=True)
+        if thresholds:
+            clusters.append({'sym':sym,'count':cnt,'pay_key':thresholds[0],'mult':pays[thresholds[0]],'cells':positions[sym]})
+    return clusters
+
+def sb_remove_winners(grid, clusters):
+    to_remove=set()
+    for c in clusters:
+        for (col,row) in c['cells']: to_remove.add((col,row))
+    # Удаляем и опускаем
+    new_grid=[col[:] for col in grid]
+    for col in range(6):
+        col_syms=[new_grid[col][row] for row in range(5) if (col,row) not in to_remove]
+        # Добавляем новые сверху
+        while len(col_syms)<5: col_syms.insert(0,sb_rand_sym())
+        new_grid[col]=col_syms
+    return new_grid
 
 async def slot_spin(request):
     data = await request.json()
     user_id = uid(data.get('user_id')); bet = int(data.get('bet',0))
+    freespin = bool(data.get('freespin',False))
     if not user_id or bet < 100:
         return web.json_response({'error':'Мин. ставка 100'},status=400)
     conn=get_conn();cur=conn.cursor()
     cur.execute('SELECT balance FROM users WHERE id=?',(user_id,))
     row=cur.fetchone()
     if not row: conn.close(); return web.json_response({'error':'Не найден'},status=404)
-    if row[0]<bet: conn.close(); return web.json_response({'error':'Недостаточно монет!'},status=400)
-    cur.execute('UPDATE users SET balance=balance-? WHERE id=?',(bet,user_id))
-    conn.commit()
-    # Генерируем сетку 6×4
-    grid=[[slot_rand_sym() for _ in range(4)] for _ in range(6)]
-    # Верхний ряд — бонусные символы
-    bonus_letters=['B','O','N','A','N','Z','A','💰']
-    bonus_row=[random.choice(['B','O','N','A','💰','⭐','🔥']) for _ in range(4)]
-    # Считаем выигрыши — каждый символ по всем колонкам
-    sym_counts={}
-    for col in range(6):
-        col_syms=set(grid[col])
-        for s in col_syms:
-            if s!=SCATTER_IDX:
-                sym_counts[s]=sym_counts.get(s,0)+1
-    wins=[]; total_win=0; multiplier=1
-    for sym,count in sym_counts.items():
-        if count>=3:
-            pay_table=SLOT_SYMS[sym]['pays']
-            # Ближайший порог
-            applicable=[k for k in pay_table.keys() if k<=count]
-            if applicable:
-                mult=pay_table[max(applicable)]
-                payout=bet*mult
-                # Собираем ячейки для подсветки
-                cells=[]
-                for col in range(6):
-                    if sym in grid[col]:
-                        cells.append(f"{col}_0")
-                wins.append({'sym':sym,'count':count,'payout':payout,'mult':mult,'cells':cells})
-                total_win+=payout
-    # Scatter = фриспины
-    scatter_count=sum(1 for col in range(6) for row in range(4) if grid[col][row]==SCATTER_IDX)
-    freespins=0
-    if scatter_count>=3: freespins=10+(scatter_count-3)*5
+    if not freespin:
+        if row[0]<bet: conn.close(); return web.json_response({'error':'Недостаточно монет!'},status=400)
+        cur.execute('UPDATE users SET balance=balance-? WHERE id=?',(bet,user_id))
+        conn.commit()
+
+    grid=sb_gen_grid()
+    total_win=0; cascades=0; total_mult=1; all_wins=[]; all_mults={}
+
+    # Каскады
+    for cascade in range(10):
+        clusters=sb_find_clusters(grid)
+        if not clusters: break
+        cascades+=1
+
+        # Множители (во время фриспинов)
+        cascade_mult=1
+        if freespin and random.random()<0.35:
+            # Добавляем 1-3 множителя
+            num_m=random.randint(1,3)
+            for _ in range(num_m):
+                col=random.randint(0,5); row=random.randint(0,4)
+                m=random.choice(SB_MULT_VALS)
+                if col not in all_mults: all_mults[col]={}
+                all_mults[col][row]=m
+                cascade_mult+=m
+
+        # Считаем выигрыш каскада
+        cascade_win=sum(bet*c['mult'] for c in clusters)
+        if freespin: cascade_win*=max(1,cascade_mult)
+        total_win+=int(cascade_win)
+        all_wins.extend(clusters)
+
+        # Обновляем множитель
+        if cascade>0: total_mult=cascade_mult if cascade_mult>1 else total_mult
+
+        # Убираем выигравшие символы, новые падают
+        grid=sb_remove_winners(grid,clusters)
+
+    # Scatter = фриспины (4+ леденцов)
+    scatter_count=sum(1 for col in range(6) for row in range(5) if grid[col][row]==SB_SCATTER_IDX)
+    freespins_awarded=0
+    if not freespin and scatter_count>=4:
+        freespins_awarded=10+(scatter_count-4)*2
+
     if total_win>0:
         cur.execute('UPDATE users SET balance=balance+? WHERE id=?',(total_win,user_id))
         conn.commit()
     conn.close()
-    return web.json_response({'ok':True,'grid':grid,'bonus_row':bonus_row,'wins':wins,'total_win':total_win,'multiplier':multiplier,'freespins':freespins})
+
+    return web.json_response({
+        'ok':True,'grid':grid,'wins':all_wins,'total_win':total_win,
+        'total_mult':total_mult,'cascades':cascades,
+        'multipliers':all_mults,'freespins':freespins_awarded
+    })
 
 # СТАКАНЧИКИ
 async def cups_guess(request):

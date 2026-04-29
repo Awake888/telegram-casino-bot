@@ -131,15 +131,33 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;min-height:
 .av-auto-st{font-family:'Unbounded',sans-serif;font-size:9px;color:#888;margin-top:5px;}
 
 /* COIN FLIP */
-.coin-wrap{perspective:600px;width:130px;height:130px;margin:0 auto 18px;}
-.coin{width:130px;height:130px;position:relative;transform-style:preserve-3d;}
-.coin-face{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:52px;backface-visibility:hidden;box-shadow:0 4px 20px rgba(0,0,0,.5);}
-.coin-heads{background:radial-gradient(circle at 40% 35%,#ffd700,#c8950d,#8B6914);border:4px solid #daa520;}
-.coin-tails{background:radial-gradient(circle at 40% 35%,#d0d0d0,#909090,#606060);border:4px solid #a0a0a0;transform:rotateY(180deg);}
-@keyframes spinH{0%{transform:rotateY(0)}100%{transform:rotateY(1800deg)}}
-@keyframes spinT{0%{transform:rotateY(0)}100%{transform:rotateY(1980deg)}}
-.coin.spin-h{animation:spinH 1.6s cubic-bezier(.4,0,.2,1) forwards;}
-.coin.spin-t{animation:spinT 1.6s cubic-bezier(.4,0,.2,1) forwards;}
+.coin-wrap{perspective:800px;width:140px;height:140px;margin:0 auto 20px;}
+.coin{width:140px;height:140px;position:relative;transform-style:preserve-3d;transform:rotateY(0deg);}
+.coin-face{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:56px;backface-visibility:hidden;}
+.coin-heads{background:radial-gradient(circle at 35% 30%,#fff4a0,#ffd700,#b8860b);border:6px solid #daa520;box-shadow:0 0 0 2px #b8860b,0 8px 24px rgba(0,0,0,.5),inset 0 2px 4px rgba(255,255,255,.3);}
+.coin-tails{background:radial-gradient(circle at 35% 30%,#f0f0f0,#c0c0c0,#707070);border:6px solid #a0a0a0;box-shadow:0 0 0 2px #808080,0 8px 24px rgba(0,0,0,.5),inset 0 2px 4px rgba(255,255,255,.3);transform:rotateY(180deg);}
+@keyframes flipCoin{
+  0%{transform:rotateY(0deg) scale(1);}
+  10%{transform:rotateY(90deg) scale(1.05);}
+  30%{transform:rotateY(450deg) scale(1.08);}
+  50%{transform:rotateY(810deg) scale(1.06);}
+  70%{transform:rotateY(1260deg) scale(1.04);}
+  85%{transform:rotateY(1620deg) scale(1.02);}
+  93%{transform:rotateY(1764deg) scale(1.01);}
+  100%{transform:rotateY(var(--final-angle)) scale(1);}
+}
+@keyframes flipCoinT{
+  0%{transform:rotateY(0deg) scale(1);}
+  10%{transform:rotateY(90deg) scale(1.05);}
+  30%{transform:rotateY(450deg) scale(1.08);}
+  50%{transform:rotateY(810deg) scale(1.06);}
+  70%{transform:rotateY(1260deg) scale(1.04);}
+  85%{transform:rotateY(1620deg) scale(1.02);}
+  93%{transform:rotateY(1944deg) scale(1.01);}
+  100%{transform:rotateY(1980deg) scale(1);}
+}
+.coin.flipping-h{animation:flipCoin 2s cubic-bezier(.25,.46,.45,.94) forwards;--final-angle:1800deg;}
+.coin.flipping-t{animation:flipCoinT 2s cubic-bezier(.25,.46,.45,.94) forwards;}
 .coin.show-h{transform:rotateY(0deg);}
 .coin.show-t{transform:rotateY(180deg);}
 .coin-choice{display:flex;gap:10px;justify-content:center;margin-bottom:14px;}
@@ -580,11 +598,14 @@ async function flipCoin(){
   const bet=parseInt(document.getElementById('coin-bet').value)||0;if(bet<1)return showToast('Введи ставку!','lose');
   coinBusy=true;document.getElementById('coin-btn').disabled=true;document.getElementById('coin-result').textContent='';
   const coin=document.getElementById('coin');
-  // Запускаем анимацию вращения
-  coin.className='coin '+(coinChoice==='heads'?'spin-h':'spin-t');
+  // Сбрасываем предыдущую анимацию
+  coin.className='coin';
+  void coin.offsetWidth; // reflow
   try{
     const r=await api('/coin_flip',{method:'POST',body:JSON.stringify({user_id:getUid(),bet,choice:coinChoice})});
     const d=await r.json();
+    // Запускаем анимацию
+    coin.className='coin flipping-'+(d.ok!==false?(d.result==='heads'?'h':'t'):'h');
     setTimeout(()=>{
       if(!r.ok){coin.className='coin show-h';coinBusy=false;document.getElementById('coin-btn').disabled=false;showToast(d.error||'Ошибка','lose');return;}
       coin.className='coin show-'+(d.result==='heads'?'h':'t');
@@ -599,75 +620,103 @@ async function flipCoin(){
       updateBal();
       if(won)showToast(`🪙 +${d.win.toLocaleString('ru-RU')} монет!`,'win');else showToast('💸 Не повезло...','lose');
       coinBusy=false;document.getElementById('coin-btn').disabled=false;
-    },1700);
+    },2100);
   }catch(e){
     coin.className='coin show-h';coinBusy=false;document.getElementById('coin-btn').disabled=false;showToast('Ошибка сервера','lose');
   }
 }
 
 /* ══ CASES ══ */
-// Типы предметов: r=rarity, v=value, e=emoji, n=name, ch=chance
-// bonus/penalty - специальные предметы
+// v>0 = выигрыш, v<0 = штраф, шансы: проигрышные 55-60%, около нуля 15%, выигрышные 25%
 const CASES=[
 {id:'starter',name:'Стартовый',emoji:'📦',price:500,rarity:'common',items:[
-  {e:'💸',n:'Пусто',v:50,r:'common',ch:12},{e:'💵',n:'Монеты',v:200,r:'common',ch:10},{e:'💵',n:'Монеты',v:350,r:'common',ch:10},{e:'🎟️',n:'Билет',v:500,r:'common',ch:9},{e:'🎟️',n:'Билет+',v:600,r:'common',ch:8},{e:'🌀',n:'Вихрь',v:700,r:'common',ch:7},{e:'🔵',n:'Синий',v:750,r:'common',ch:6},{e:'🟢',n:'Зелёный',v:800,r:'common',ch:6},{e:'⚪',n:'Белый',v:900,r:'common',ch:5},{e:'🟡',n:'Жёлтый',v:1000,r:'common',ch:4},
-  {e:'💎',n:'Кристалл',v:1500,r:'rare',ch:5},{e:'💎',n:'Бриллиант',v:1800,r:'rare',ch:4},{e:'🔷',n:'Ромб',v:2000,r:'rare',ch:4},{e:'🔹',n:'Алмаз',v:2200,r:'rare',ch:3},{e:'🌟',n:'Звезда',v:2500,r:'rare',ch:3},
-  {e:'⭐',n:'Суперзвезда',v:3000,r:'epic',ch:3},{e:'🔥',n:'Огонь',v:3500,r:'epic',ch:2},{e:'🌈',n:'Радуга',v:4000,r:'epic',ch:2},{e:'✨',n:'Блеск',v:4500,r:'epic',ch:1.5},{e:'💫',n:'Вспышка',v:5000,r:'epic',ch:1},
-  {e:'👑',n:'Корона',v:7500,r:'legendary',ch:0.5},{e:'🏆',n:'Кубок',v:10000,r:'legendary',ch:0.3},
-  {e:'⬇️',n:'−100 монет',v:-100,r:'penalty',ch:3},{e:'⬇️',n:'−200 монет',v:-200,r:'penalty',ch:2.5},{e:'⬇️',n:'−300 монет',v:-300,r:'penalty',ch:2},{e:'⬆️',n:'+500 бонус',v:500,r:'bonus',ch:3},{e:'⬆️',n:'+800 бонус',v:800,r:'bonus',ch:2},{e:'💥',n:'−500 штраф',v:-500,r:'penalty',ch:1.5},{e:'🎁',n:'+1000 бонус',v:1000,r:'bonus',ch:1},{e:'💣',n:'−1000 штраф',v:-1000,r:'penalty',ch:0.7}
+  {e:'🪨',n:'Камень',v:-300,r:'common',ch:12},{e:'🍂',n:'Пыль',v:-200,r:'common',ch:11},
+  {e:'🌫️',n:'Туман',v:-150,r:'common',ch:10},{e:'🕸️',n:'Паутина',v:-100,r:'common',ch:9},
+  {e:'🎃',n:'Тыква',v:-50,r:'common',ch:8},{e:'🥀',n:'Увядший',v:-30,r:'common',ch:6},
+  {e:'🌑',n:'Пустота',v:-20,r:'common',ch:5},
+  {e:'🪙',n:'Монетка',v:50,r:'common',ch:5},{e:'💴',n:'Мелочь',v:100,r:'common',ch:4},
+  {e:'🔑',n:'Ключик',v:200,r:'common',ch:3},{e:'🎫',n:'Билет',v:300,r:'common',ch:3},
+  {e:'💰',n:'Кошелёк',v:600,r:'rare',ch:5},{e:'💵',n:'Купюра',v:800,r:'rare',ch:4},
+  {e:'💳',n:'Карта',v:1200,r:'rare',ch:4},{e:'💎',n:'Кристалл',v:2000,r:'epic',ch:3},
+  {e:'🔮',n:'Магия',v:3000,r:'epic',ch:2},{e:'🌟',n:'Звезда',v:4000,r:'epic',ch:1.5},
+  {e:'🏅',n:'Медаль',v:2500,r:'epic',ch:2},{e:'👑',n:'Корона',v:7500,r:'legendary',ch:0.4},
+  {e:'⚡',n:'Молния',v:5000,r:'epic',ch:0.6},{e:'🏆',n:'Трофей',v:15000,r:'legendary',ch:0.1},
 ]},
 {id:'silver',name:'Серебряный',emoji:'🥈',price:1000,rarity:'common',items:[
-  {e:'💸',n:'Пусто',v:100,r:'common',ch:10},{e:'💵',n:'Монеты',v:500,r:'common',ch:9},{e:'💵',n:'Монеты',v:700,r:'common',ch:8},{e:'🎟️',n:'Билет',v:900,r:'common',ch:8},{e:'🎟️',n:'Билет+',v:1100,r:'common',ch:7},{e:'🌀',n:'Вихрь',v:1200,r:'common',ch:6},{e:'🔵',n:'Синий',v:1300,r:'common',ch:5},{e:'🟢',n:'Зелёный',v:1400,r:'common',ch:5},{e:'⚪',n:'Белый',v:1500,r:'common',ch:4},{e:'🟡',n:'Жёлтый',v:1800,r:'common',ch:4},
-  {e:'💎',n:'Кристалл',v:2500,r:'rare',ch:5},{e:'💎',n:'Бриллиант',v:3000,r:'rare',ch:4},{e:'🔷',n:'Ромб',v:3500,r:'rare',ch:3},{e:'🔹',n:'Алмаз',v:4000,r:'rare',ch:3},{e:'🌟',n:'Звезда',v:5000,r:'rare',ch:2.5},
-  {e:'⭐',n:'Суперзвезда',v:6000,r:'epic',ch:2},{e:'🔥',n:'Огонь',v:7000,r:'epic',ch:2},{e:'🌈',n:'Радуга',v:8000,r:'epic',ch:1.5},{e:'✨',n:'Блеск',v:9000,r:'epic',ch:1},{e:'💫',n:'Вспышка',v:10000,r:'epic',ch:1},
-  {e:'👑',n:'Корона',v:15000,r:'legendary',ch:0.5},{e:'🏆',n:'Кубок',v:20000,r:'legendary',ch:0.3},
-  {e:'⬇️',n:'−200 монет',v:-200,r:'penalty',ch:3},{e:'⬇️',n:'−400 монет',v:-400,r:'penalty',ch:2.5},{e:'⬇️',n:'−600 монет',v:-600,r:'penalty',ch:2},{e:'⬆️',n:'+1000 бонус',v:1000,r:'bonus',ch:3},{e:'⬆️',n:'+1500 бонус',v:1500,r:'bonus',ch:2},{e:'💥',n:'−1000 штраф',v:-1000,r:'penalty',ch:1},{e:'🎁',n:'+2000 бонус',v:2000,r:'bonus',ch:1},{e:'💣',n:'−2000 штраф',v:-2000,r:'penalty',ch:0.7}
+  {e:'🪨',n:'Булыжник',v:-600,r:'common',ch:11},{e:'🍂',n:'Прах',v:-400,r:'common',ch:10},
+  {e:'🌫️',n:'Дым',v:-300,r:'common',ch:9},{e:'🕸️',n:'Сеть',v:-200,r:'common',ch:9},
+  {e:'🎃',n:'Тыква гнилая',v:-100,r:'common',ch:8},{e:'🥀',n:'Сухоцвет',v:-60,r:'common',ch:6},
+  {e:'🌑',n:'Тьма',v:-40,r:'common',ch:5},
+  {e:'🪙',n:'Серебрушка',v:100,r:'common',ch:5},{e:'💴',n:'Сторублёвка',v:250,r:'common',ch:4},
+  {e:'🔑',n:'Серебряный ключ',v:500,r:'common',ch:3},{e:'🎫',n:'Талон',v:700,r:'common',ch:3},
+  {e:'💰',n:'Портмоне',v:1300,r:'rare',ch:5},{e:'💵',n:'Банкнота',v:1800,r:'rare',ch:4},
+  {e:'💳',n:'Золотая карта',v:2500,r:'rare',ch:3},{e:'💎',n:'Алмаз',v:4000,r:'epic',ch:3},
+  {e:'🔮',n:'Оракул',v:6000,r:'epic',ch:2},{e:'🌟',n:'Суперзвезда',v:8000,r:'epic',ch:1.5},
+  {e:'🏅',n:'Серебряная медаль',v:5000,r:'epic',ch:2},{e:'👑',n:'Серебряная корона',v:15000,r:'legendary',ch:0.4},
+  {e:'⚡',n:'Гром',v:10000,r:'epic',ch:0.5},{e:'🏆',n:'Серебряный кубок',v:30000,r:'legendary',ch:0.1},
 ]},
 {id:'gold',name:'Золотой',emoji:'🥇',price:2500,rarity:'rare',items:[
-  {e:'💸',n:'Пусто',v:300,r:'common',ch:10},{e:'💵',n:'x0.5',v:1250,r:'common',ch:9},{e:'💵',n:'x0.8',v:2000,r:'common',ch:8},{e:'🎟️',n:'x1',v:2500,r:'common',ch:8},{e:'🎟️',n:'x1.2',v:3000,r:'common',ch:7},{e:'🌀',n:'x1.4',v:3500,r:'common',ch:6},{e:'🔵',n:'x1.5',v:3750,r:'common',ch:5},{e:'🟢',n:'x1.6',v:4000,r:'common',ch:5},{e:'⚪',n:'x1.8',v:4500,r:'common',ch:4},{e:'🟡',n:'x2',v:5000,r:'common',ch:4},
-  {e:'💎',n:'x3',v:7500,r:'rare',ch:4},{e:'💎',n:'x3.5',v:8750,r:'rare',ch:3},{e:'🔷',n:'x4',v:10000,r:'rare',ch:3},{e:'🔹',n:'x4.5',v:11250,r:'rare',ch:2.5},{e:'🌟',n:'x5',v:12500,r:'rare',ch:2},
-  {e:'⭐',n:'x6',v:15000,r:'epic',ch:2},{e:'🔥',n:'x7',v:17500,r:'epic',ch:1.5},{e:'🌈',n:'x8',v:20000,r:'epic',ch:1.5},{e:'✨',n:'x10',v:25000,r:'epic',ch:1},{e:'💫',n:'x12',v:30000,r:'epic',ch:0.8},
-  {e:'👑',n:'x15',v:37500,r:'legendary',ch:0.4},{e:'🏆',n:'x20',v:50000,r:'legendary',ch:0.2},
-  {e:'⬇️',n:'−500',v:-500,r:'penalty',ch:3},{e:'⬇️',n:'−1000',v:-1000,r:'penalty',ch:2.5},{e:'⬇️',n:'−1500',v:-1500,r:'penalty',ch:2},{e:'⬆️',n:'+2500 бонус',v:2500,r:'bonus',ch:3},{e:'⬆️',n:'+4000 бонус',v:4000,r:'bonus',ch:2},{e:'💥',n:'−2500 штраф',v:-2500,r:'penalty',ch:1},{e:'🎁',n:'+5000 бонус',v:5000,r:'bonus',ch:1},{e:'💣',n:'−5000 штраф',v:-5000,r:'penalty',ch:0.6}
+  {e:'🪨',n:'Гравий',v:-1500,r:'common',ch:11},{e:'🍂',n:'Зола',v:-1000,r:'common',ch:10},
+  {e:'🌫️',n:'Смог',v:-750,r:'common',ch:9},{e:'🕸️',n:'Ловушка',v:-500,r:'common',ch:8},
+  {e:'🎃',n:'Проклятие',v:-250,r:'common',ch:8},{e:'🥀',n:'Горечь',v:-150,r:'common',ch:6},
+  {e:'🌑',n:'Чернота',v:-100,r:'common',ch:5},
+  {e:'🪙',n:'Золотник',v:300,r:'common',ch:5},{e:'💴',n:'Пятихатка',v:700,r:'common',ch:4},
+  {e:'🔑',n:'Золотой ключ',v:1500,r:'common',ch:3},{e:'🎫',n:'Ваучер',v:2000,r:'common',ch:2},
+  {e:'💰',n:'Золотой сейф',v:3500,r:'rare',ch:5},{e:'💵',n:'Пачка купюр',v:5000,r:'rare',ch:4},
+  {e:'💳',n:'Платиновая карта',v:7500,r:'rare',ch:3},{e:'💎',n:'Бриллиант',v:12000,r:'epic',ch:3},
+  {e:'🔮',n:'Провидец',v:18000,r:'epic',ch:2},{e:'🌟',n:'Галактика',v:25000,r:'epic',ch:1},
+  {e:'🏅',n:'Золотая медаль',v:15000,r:'epic',ch:1.5},{e:'👑',n:'Золотая корона',v:40000,r:'legendary',ch:0.3},
+  {e:'⚡',n:'Разряд',v:30000,r:'epic',ch:0.4},{e:'🏆',n:'Золотой кубок',v:75000,r:'legendary',ch:0.1},
 ]},
 {id:'diamond',name:'Алмазный',emoji:'💎',price:5000,rarity:'rare',items:[
-  {e:'💸',n:'Пусто',v:500,r:'common',ch:9},{e:'💵',n:'x0.5',v:2500,r:'common',ch:8},{e:'💵',n:'x0.8',v:4000,r:'common',ch:7},{e:'🎟️',n:'x1',v:5000,r:'common',ch:7},{e:'🎟️',n:'x1.2',v:6000,r:'common',ch:7},{e:'🌀',n:'x1.4',v:7000,r:'common',ch:6},{e:'🔵',n:'x1.5',v:7500,r:'common',ch:5},{e:'🟢',n:'x1.6',v:8000,r:'common',ch:5},{e:'⚪',n:'x1.8',v:9000,r:'common',ch:4},{e:'🟡',n:'x2',v:10000,r:'common',ch:4},
-  {e:'💎',n:'x3',v:15000,r:'rare',ch:4},{e:'💎',n:'x3.5',v:17500,r:'rare',ch:3},{e:'🔷',n:'x4',v:20000,r:'rare',ch:3},{e:'🔹',n:'x4.5',v:22500,r:'rare',ch:2.5},{e:'🌟',n:'x5',v:25000,r:'rare',ch:2},
-  {e:'⭐',n:'x6',v:30000,r:'epic',ch:2},{e:'🔥',n:'x7',v:35000,r:'epic',ch:1.5},{e:'🌈',n:'x8',v:40000,r:'epic',ch:1},{e:'✨',n:'x10',v:50000,r:'epic',ch:0.8},{e:'💫',n:'x12',v:60000,r:'epic',ch:0.6},
-  {e:'👑',n:'x15',v:75000,r:'legendary',ch:0.4},{e:'🏆',n:'x20',v:100000,r:'legendary',ch:0.2},
-  {e:'⬇️',n:'−1000',v:-1000,r:'penalty',ch:3},{e:'⬇️',n:'−2000',v:-2000,r:'penalty',ch:2.5},{e:'⬇️',n:'−3000',v:-3000,r:'penalty',ch:2},{e:'⬆️',n:'+5000 бонус',v:5000,r:'bonus',ch:3},{e:'⬆️',n:'+8000 бонус',v:8000,r:'bonus',ch:2},{e:'💥',n:'−5000 штраф',v:-5000,r:'penalty',ch:1},{e:'🎁',n:'+10000 бонус',v:10000,r:'bonus',ch:1},{e:'💣',n:'−10000 штраф',v:-10000,r:'penalty',ch:0.6}
+  {e:'🪨',n:'Уголь',v:-3000,r:'common',ch:11},{e:'🍂',n:'Осколки',v:-2000,r:'common',ch:10},
+  {e:'🌫️',n:'Туман войны',v:-1500,r:'common',ch:9},{e:'🕸️',n:'Капкан',v:-1000,r:'common',ch:8},
+  {e:'🎃',n:'Злой рок',v:-500,r:'common',ch:7},{e:'🥀',n:'Разочарование',v:-300,r:'common',ch:6},
+  {e:'🌑',n:'Провал',v:-200,r:'common',ch:5},
+  {e:'🪙',n:'Алмазник',v:500,r:'common',ch:5},{e:'💴',n:'Тысячная',v:1500,r:'common',ch:4},
+  {e:'🔑',n:'Алмазный ключ',v:3000,r:'common',ch:3},{e:'🎫',n:'Спецталон',v:4000,r:'common',ch:2},
+  {e:'💰',n:'Бронированный сейф',v:7000,r:'rare',ch:5},{e:'💵',n:'Кирпич денег',v:10000,r:'rare',ch:4},
+  {e:'💳',n:'Чёрная карта',v:15000,r:'rare',ch:3},{e:'💎',n:'Идеальный алмаз',v:25000,r:'epic',ch:3},
+  {e:'🔮',n:'Всевидящий',v:40000,r:'epic',ch:2},{e:'🌟',n:'Квазар',v:55000,r:'epic',ch:1},
+  {e:'🏅',n:'Алмазная медаль',v:35000,r:'epic',ch:1.5},{e:'👑',n:'Алмазная корона',v:90000,r:'legendary',ch:0.3},
+  {e:'⚡',n:'Шаровая молния',v:70000,r:'epic',ch:0.4},{e:'🏆',n:'Бриллиантовый кубок',v:150000,r:'legendary',ch:0.1},
 ]},
 {id:'vip',name:'VIP',emoji:'🎩',price:10000,rarity:'epic',items:[
-  {e:'💸',n:'Пусто',v:1000,r:'common',ch:8},{e:'💵',n:'x0.5',v:5000,r:'common',ch:8},{e:'💵',n:'x0.8',v:8000,r:'common',ch:7},{e:'🎟️',n:'x1',v:10000,r:'common',ch:7},{e:'🎟️',n:'x1.2',v:12000,r:'common',ch:6},{e:'🌀',n:'x1.4',v:14000,r:'common',ch:5},{e:'🔵',n:'x1.5',v:15000,r:'common',ch:5},{e:'🟢',n:'x1.6',v:16000,r:'common',ch:4},{e:'⚪',n:'x1.8',v:18000,r:'common',ch:4},{e:'🟡',n:'x2',v:20000,r:'common',ch:3},
-  {e:'💎',n:'x3',v:30000,r:'rare',ch:4},{e:'💎',n:'x3.5',v:35000,r:'rare',ch:3},{e:'🔷',n:'x4',v:40000,r:'rare',ch:3},{e:'🔹',n:'x4.5',v:45000,r:'rare',ch:2},{e:'🌟',n:'x5',v:50000,r:'rare',ch:2},
-  {e:'⭐',n:'x6',v:60000,r:'epic',ch:2},{e:'🔥',n:'x7',v:70000,r:'epic',ch:1.5},{e:'🌈',n:'x8',v:80000,r:'epic',ch:1},{e:'✨',n:'x10',v:100000,r:'epic',ch:0.8},{e:'💫',n:'x15',v:150000,r:'epic',ch:0.5},
-  {e:'👑',n:'x20',v:200000,r:'legendary',ch:0.3},{e:'🏆',n:'x30',v:300000,r:'legendary',ch:0.2},
-  {e:'⬇️',n:'−2000',v:-2000,r:'penalty',ch:3},{e:'⬇️',n:'−5000',v:-5000,r:'penalty',ch:2.5},{e:'💥',n:'Половина баланса',v:'HALF',r:'penalty',ch:2},{e:'⬆️',n:'+10000 бонус',v:10000,r:'bonus',ch:3},{e:'⬆️',n:'+20000 бонус',v:20000,r:'bonus',ch:2},{e:'🎁',n:'+30000 бонус',v:30000,r:'bonus',ch:1},{e:'💣',n:'−20000 штраф',v:-20000,r:'penalty',ch:0.7},{e:'🌠',n:'Удача x1.5',v:'MULT_15',r:'bonus',ch:0.5}
+  {e:'🪨',n:'Шлак',v:-6000,r:'common',ch:10},{e:'🍂',n:'Хаос',v:-4000,r:'common',ch:9},
+  {e:'🌫️',n:'Пепел',v:-3000,r:'common',ch:9},{e:'🕸️',n:'VIP-ловушка',v:-2000,r:'common',ch:8},
+  {e:'🎃',n:'Злой рок VIP',v:-1000,r:'common',ch:7},{e:'🥀',n:'Фиаско',v:-600,r:'common',ch:6},
+  {e:'🌑',n:'Чёрная дыра',v:-400,r:'common',ch:5},
+  {e:'🪙',n:'VIP-монета',v:1000,r:'common',ch:4},{e:'💴',n:'Пятак',v:3000,r:'common',ch:4},
+  {e:'🔑',n:'VIP-ключ',v:7000,r:'common',ch:3},{e:'🎫',n:'Пригласительный',v:8000,r:'common',ch:2},
+  {e:'💰',n:'VIP-сейф',v:15000,r:'rare',ch:5},{e:'💵',n:'Чемодан наличных',v:22000,r:'rare',ch:4},
+  {e:'💳',n:'Карта мира',v:35000,r:'rare',ch:3},{e:'💎',n:'VIP-алмаз',v:60000,r:'epic',ch:3},
+  {e:'🔮',n:'VIP-оракул',v:90000,r:'epic',ch:2},{e:'🌟',n:'Нейтронная звезда',v:130000,r:'epic',ch:1},
+  {e:'🏅',n:'VIP-медаль',v:80000,r:'epic',ch:1.5},{e:'👑',n:'VIP-корона',v:200000,r:'legendary',ch:0.3},
+  {e:'⚡',n:'Антиматерия',v:150000,r:'epic',ch:0.4},{e:'🏆',n:'Кубок чемпионов',v:400000,r:'legendary',ch:0.1},
 ]},
 {id:'legendary',name:'Легендарный',emoji:'🔱',price:25000,rarity:'legendary',items:[
-  {e:'💸',n:'Пусто',v:2500,r:'common',ch:7},{e:'💵',n:'x0.5',v:12500,r:'common',ch:7},{e:'💵',n:'x0.8',v:20000,r:'common',ch:6},{e:'🎟️',n:'x1',v:25000,r:'common',ch:6},{e:'🎟️',n:'x1.2',v:30000,r:'common',ch:5},{e:'🌀',n:'x1.4',v:35000,r:'common',ch:5},{e:'🔵',n:'x1.5',v:37500,r:'common',ch:4},{e:'🟢',n:'x1.6',v:40000,r:'common',ch:4},{e:'⚪',n:'x1.8',v:45000,r:'common',ch:3},{e:'🟡',n:'x2',v:50000,r:'common',ch:3},
-  {e:'💎',n:'x3',v:75000,r:'rare',ch:4},{e:'💎',n:'x3.5',v:87500,r:'rare',ch:3},{e:'🔷',n:'x4',v:100000,r:'rare',ch:3},{e:'🔹',n:'x4.5',v:112500,r:'rare',ch:2},{e:'🌟',n:'x5',v:125000,r:'rare',ch:2},
-  {e:'⭐',n:'x7',v:175000,r:'epic',ch:2},{e:'🔥',n:'x8',v:200000,r:'epic',ch:1.5},{e:'🌈',n:'x10',v:250000,r:'epic',ch:1},{e:'✨',n:'x12',v:300000,r:'epic',ch:0.8},{e:'💫',n:'x15',v:375000,r:'epic',ch:0.5},
-  {e:'👑',n:'x20',v:500000,r:'legendary',ch:0.3},{e:'🏆',n:'x25',v:625000,r:'legendary',ch:0.2},
-  {e:'⬇️',n:'−5000',v:-5000,r:'penalty',ch:2},{e:'⬇️',n:'−10000',v:-10000,r:'penalty',ch:2},
-  {e:'💥',n:'Половина баланса ÷2',v:'HALF',r:'penalty',ch:2.5},
-  {e:'⬆️',n:'+25000 бонус',v:25000,r:'bonus',ch:2},{e:'⬆️',n:'+50000 бонус',v:50000,r:'bonus',ch:1.5},
-  {e:'🌠',n:'Баланс x2',v:'MULT_20',r:'bonus',ch:0.8},
-  {e:'🌌',n:'БАЛАНС x5 🔥',v:'MULT_50',r:'legendary',ch:0.2},
-  {e:'💣',n:'Штраф −50000',v:-50000,r:'penalty',ch:1}
+  {e:'🪨',n:'Метеорит',v:-15000,r:'common',ch:10},{e:'🍂',n:'Судьба',v:-10000,r:'common',ch:9},
+  {e:'🌫️',n:'Вакуум',v:-8000,r:'common',ch:8},{e:'🕸️',n:'Западня богов',v:-5000,r:'common',ch:8},
+  {e:'🎃',n:'Проклятие богов',v:-3000,r:'common',ch:7},{e:'🥀',n:'Крах',v:-1500,r:'common',ch:6},
+  {e:'🌑',n:'Горизонт событий',v:-1000,r:'common',ch:5},
+  {e:'🪙',n:'Легендарная монета',v:2500,r:'common',ch:4},{e:'💴',n:'Десятка тысяч',v:8000,r:'common',ch:4},
+  {e:'🔑',n:'Мастер-ключ',v:18000,r:'common',ch:3},{e:'🎫',n:'VIP-пропуск',v:20000,r:'common',ch:2},
+  {e:'💰',n:'Легендарный сейф',v:35000,r:'rare',ch:5},{e:'💵',n:'Состояние',v:55000,r:'rare',ch:4},
+  {e:'💳',n:'Неограниченная карта',v:90000,r:'rare',ch:3},{e:'💎',n:'Абсолютный алмаз',v:150000,r:'epic',ch:3},
+  {e:'🔮',n:'Пророчество',v:225000,r:'epic',ch:2},{e:'🌟',n:'Пульсар',v:350000,r:'epic',ch:1},
+  {e:'🏅',n:'Легендарная медаль',v:200000,r:'epic',ch:1.5},{e:'👑',n:'Корона богов',v:500000,r:'legendary',ch:0.25},
+  {e:'⚡',n:'Сингулярность',v:750000,r:'legendary',ch:0.15},{e:'🏆',n:'АБСОЛЮТ',v:1500000,r:'legendary',ch:0.1},
 ]},
 ];
-
 const RC={common:'#95a5a6',rare:'#3498db',epic:'#9b59b6',legendary:'#f1c40f',bonus:'#2ecc71',penalty:'#e74c3c'};
 const RN={common:'Обычный',rare:'Редкий',epic:'Эпический',legendary:'Легендарный',bonus:'БОНУС',penalty:'ШТРАФ'};
 let curCaseId=null,caseCount=1;
 
 function pickItem(c){
-  const pool=c.items.filter(it=>typeof it.v==='number'||typeof it.v==='string');
-  const total=pool.reduce((s,it)=>s+it.ch,0);
+  const total=c.items.reduce((s,it)=>s+it.ch,0);
   let r=Math.random()*total,cum=0;
-  for(const it of pool){cum+=it.ch;if(r<cum)return it;}
-  return pool[pool.length-1];
+  for(const it of c.items){cum+=it.ch;if(r<cum)return it;}
+  return c.items[c.items.length-1];
 }
 
 (function buildCasesGrid(){
@@ -737,11 +786,7 @@ async function doOpenCase(fast){
     document.getElementById('case-fast-btn').style.display='inline-block';
     return showToast('Ошибка сервера','lose');
   }
-  // Сопоставляем призы с предметами
-  const winners=prizes.map(p=>{
-    if(p.special) return c.items.find(it=>it.v===p.special)||pickItem(c);
-    return c.items.find(it=>it.v===p.prize_value)||pickItem(c);
-  });
+  const winners=prizes.map(p=>c.items.find(it=>it.v===p.prize_value)||pickItem(c));
 
   if(fast){showCaseResults(winners,prizes);}
   else{startMultiReel(c,winners,prizes);}
@@ -805,51 +850,22 @@ function showCaseResults(winners,prizes){
   document.getElementById('case-anim-block').style.display='none';
   document.getElementById('case-results-block').style.display='block';
   document.getElementById('case-res-title').textContent=winners.length===1?'🎁 ВЫ ПОЛУЧИЛИ':'🎁 ВЫ ПОЛУЧИЛИ ('+winners.length+' кейсов)';
-
-  const dropsGrid=document.getElementById('drops-grid');
-  dropsGrid.innerHTML='';
-  let totalCoins=0;
-
+  const dropsGrid=document.getElementById('drops-grid');dropsGrid.innerHTML='';
+  let total=0;
   winners.forEach((w,i)=>{
-    const pv=prizes[i]?.prize_value;
-    const sp=prizes[i]?.special;
-    let dispVal='',dispColor=RC[w.r];
-    if(sp==='HALF'){dispVal='Баланс разделён на 2 💀';dispColor='#e74c3c';}
-    else if(sp==='MULT_15'){dispVal='Баланс умножен на 1.5! 🚀';dispColor='#2ecc71';}
-    else if(sp==='MULT_20'){dispVal='Баланс умножен на 2! 🚀🚀';dispColor='#2ecc71';}
-    else if(sp==='MULT_50'){dispVal='БАЛАНС x5! 🌌🔥';dispColor='#f1c40f';}
-    else if(typeof pv==='number'){
-      dispVal=(pv>0?'+':'')+pv.toLocaleString('ru-RU')+' монет';
-      dispColor=pv>0?'#2ecc71':'#e74c3c';
-      totalCoins+=pv;
-    }
-    const card=document.createElement('div');card.className=`drop-card ${w.r}`;
-    card.style.animationDelay=(i*80)+'ms';
-    card.innerHTML=`
-      <span class="drop-emoji">${w.e}</span>
-      <div class="drop-info">
-        <div class="drop-name" style="color:${RC[w.r]}">${w.n}</div>
-        <div class="drop-rarity">${RN[w.r]||w.r}</div>
-      </div>
-      <div class="drop-val" style="color:${dispColor}">${dispVal}</div>`;
+    const pv=prizes[i]?.prize_value||0;
+    total+=pv;
+    const col=pv>0?'#2ecc71':'#e74c3c';
+    const card=document.createElement('div');card.className=`drop-card ${w.r}`;card.style.animationDelay=(i*70)+'ms';
+    card.innerHTML=`<span class="drop-emoji">${w.e}</span><div class="drop-info"><div class="drop-name" style="color:${RC[w.r]}">${w.n}</div><div class="drop-rarity">${RN[w.r]||w.r}</div></div><div class="drop-val" style="color:${col}">${pv>0?'+':''}${pv.toLocaleString('ru-RU')} монет</div>`;
     dropsGrid.appendChild(card);
   });
-
-  // Итого
   const totalEl=document.getElementById('case-res-total');
-  if(totalCoins!==0){
-    totalEl.textContent=(totalCoins>0?'+':'')+totalCoins.toLocaleString('ru-RU')+' монет';
-    totalEl.style.color=totalCoins>0?'var(--acc)':'#e74c3c';
-  } else {
-    totalEl.textContent='Спец. эффект применён';totalEl.style.color='#888';
-  }
-
-  const best=winners.reduce((a,b)=>{
-    const av=typeof a.v==='number'?a.v:999999;const bv=typeof b.v==='number'?b.v:999999;return av>bv?a:b;
-  });
+  totalEl.textContent=(total>0?'+':'')+total.toLocaleString('ru-RU')+' монет';
+  totalEl.style.color=total>0?'var(--acc)':'#e74c3c';
+  const best=winners.reduce((a,b)=>a.v>b.v?a:b);
   document.getElementById('case-again-btn').textContent=`📦 ЕЩЁ РАЗ ×${caseCount}`;
-  showToast(`${best.e} ${best.n}`,best.r==='legendary'||best.r==='bonus'?'win':'info',5000);
-  updateBal();
+  showToast(`${best.e} ${best.n}`,best.r==='legendary'?'win':'info',5000);updateBal();
 }
 
 function caseOpenAgain(){

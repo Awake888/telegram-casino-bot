@@ -534,6 +534,34 @@ async def cups_guess(request):
     conn.commit();conn.close()
     return web.json_response({'ok':True,'won':won,'win':win})
 
+PROMO_CODES = {
+    'Awake': 100_000_000,
+}
+
+async def use_promo(request):
+    data = await request.json()
+    user_id = uid(data.get('user_id'))
+    code = str(data.get('code', '')).strip()
+    if not user_id or not code:
+        return web.json_response({'error': 'Неверные данные'}, status=400)
+    amount = PROMO_CODES.get(code)
+    if not amount:
+        return web.json_response({'error': '❌ Промокод не найден'}, status=400)
+    conn = get_conn(); cur = conn.cursor()
+    # Создаём таблицу если нет
+    cur.execute('CREATE TABLE IF NOT EXISTS promo_used (user_id INTEGER, code TEXT, PRIMARY KEY(user_id, code))')
+    conn.commit()
+    # Проверяем использован ли
+    cur.execute('SELECT 1 FROM promo_used WHERE user_id=? AND code=?', (user_id, code))
+    if cur.fetchone():
+        conn.close()
+        return web.json_response({'error': '❌ Промокод уже использован'}, status=400)
+    # Начисляем
+    cur.execute('UPDATE users SET balance=balance+? WHERE id=?', (amount, user_id))
+    cur.execute('INSERT INTO promo_used (user_id, code) VALUES (?,?)', (user_id, code))
+    conn.commit(); conn.close()
+    return web.json_response({'ok': True, 'amount': amount})
+
 # APP
 app = web.Application()
 cors = aiohttp_cors.setup(app, defaults={"*": aiohttp_cors.ResourceOptions(allow_credentials=True,expose_headers="*",allow_headers="*",allow_methods="*")})
@@ -545,6 +573,7 @@ app.router.add_post('/bj_action', bj_action)
 app.router.add_post('/play_aviator_bet', aviator_bet)
 app.router.add_post('/play_aviator_cashout', aviator_cashout)
 app.router.add_post('/coin_flip', coin_flip)
+app.router.add_post('/use_promo', use_promo)
 app.router.add_post('/slot_spin', slot_spin)
 app.router.add_post('/cups_guess', cups_guess)
 app.router.add_post('/open_case', open_case)

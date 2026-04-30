@@ -1334,61 +1334,74 @@ async function cupsGuess(domIdx){
   if(cupsState!=='choosing'||cupsBusy)return;
   cupsState='result';cupsBusy=true;
   const bet=parseInt(document.getElementById('cups-bet').value)||0;
+  const statusEl=document.getElementById('cups-status');
 
-  // Подсвечиваем выбранный
-  document.getElementById('cup'+domIdx).classList.add('selected');
+  // Блокируем все стаканы
   for(let i=0;i<3;i++)document.getElementById('cup'+i).classList.add('disabled');
+  document.getElementById('cup'+domIdx).classList.add('selected');
 
-  await new Promise(res=>setTimeout(res,300));
+  await new Promise(res=>setTimeout(res,200));
 
-  // Поднимаем ВСЕ три стакана одновременно
-  await Promise.all([cupsLift(0,true,400),cupsLift(1,true,400),cupsLift(2,true,400)]);
+  // Шаг 1: Поднимаем ТОЛЬКО выбранный стакан
+  await cupsLift(domIdx,true,450);
 
-  // Показываем шарики — красный под всеми, но настоящий только под одним
-  for(let i=0;i<3;i++){
-    document.getElementById('ball'+i).classList.add('show');
-  }
-
-  await new Promise(res=>setTimeout(res,500));
-
-  // Определяем победу — cupsBallPos это DOM индекс шарика
+  // Определяем победу
   const won=(cupsBallPos===domIdx);
 
+  // Показываем шарик только под выбранным
+  document.getElementById('ball'+domIdx).classList.add('show');
+  await new Promise(res=>setTimeout(res,500));
+
+  // Отправляем результат на сервер
+  let winAmount=0;
   try{
     const r=await api('/cups_guess',{method:'POST',body:JSON.stringify({user_id:getUid(),bet,won})});
     const d=await r.json();
-    const statusEl=document.getElementById('cups-status');
     if(r.ok){
+      winAmount=d.win||0;
       if(won){
-        statusEl.textContent=`🎉 УГАДАЛ! +${d.win.toLocaleString('ru-RU')} монет`;statusEl.style.color='#2ecc71';
+        statusEl.textContent=`🎉 УГАДАЛ! +${winAmount.toLocaleString('ru-RU')} монет`;statusEl.style.color='#2ecc71';
         document.getElementById('cup'+domIdx).querySelector('.cup-body-el').style.boxShadow='0 0 30px rgba(46,204,113,.9)';
         cupsWins++;cupsStreak=cupsStreak>0?cupsStreak+1:1;
-        showToast(`🎩 +${d.win.toLocaleString('ru-RU')} монет!`,'win',3000);
+        showToast(`🎩 +${winAmount.toLocaleString('ru-RU')} монет!`,'win',3000);
       }else{
-        statusEl.textContent=`😔 Не угадал... −${bet.toLocaleString('ru-RU')} монет`;statusEl.style.color='#e74c3c';
-        document.getElementById('cup'+cupsBallPos).querySelector('.cup-body-el').style.boxShadow='0 0 30px rgba(46,204,113,.9)';
+        statusEl.textContent=`😔 Не угадал...`;statusEl.style.color='#e74c3c';
+        document.getElementById('cup'+domIdx).querySelector('.cup-body-el').style.boxShadow='0 0 30px rgba(231,76,60,.8)';
         cupsLosses++;cupsStreak=cupsStreak<0?cupsStreak-1:-1;
-        showToast('🎩 Шарик был в другом!','lose',3000);
       }
-      updateBal();
+      balLocked=false;updateBal();
     }
   }catch(e){showToast('Ошибка сервера','lose');}
+
+  await new Promise(res=>setTimeout(res,600));
+
+  if(!won){
+    // Шаг 2: Поднимаем остальные два стакана — видно где был шарик
+    const others=[0,1,2].filter(i=>i!==domIdx);
+    await Promise.all(others.map(i=>cupsLift(i,true,400)));
+
+    // Показываем шарик только под правильным стаканом
+    document.getElementById('ball'+cupsBallPos).classList.add('show');
+    document.getElementById('cup'+cupsBallPos).querySelector('.cup-body-el').style.boxShadow='0 0 30px rgba(46,204,113,.9)';
+
+    statusEl.textContent=`😔 Шарик был тут! −${bet.toLocaleString('ru-RU')} монет`;
+    showToast('🎩 Вот где был шарик!','lose',3000);
+  }
 
   document.getElementById('cups-wins').textContent=cupsWins;
   document.getElementById('cups-losses').textContent=cupsLosses;
   document.getElementById('cups-streak').textContent=Math.abs(cupsStreak)+(cupsStreak>1?'🔥':cupsStreak<-1?'❄️':'');
 
-  await new Promise(res=>setTimeout(res,2000));
+  await new Promise(res=>setTimeout(res,2200));
 
-  // Прячем шарики и опускаем стаканы
+  // Прячем всё и опускаем стаканы
   for(let i=0;i<3;i++){
     document.getElementById('ball'+i).classList.remove('show');
     document.getElementById('cup'+i).querySelector('.cup-body-el').style.boxShadow='';
   }
-  await Promise.all([cupsLift(0,false,300),cupsLift(1,false,300),cupsLift(2,false,300)]);
+  await Promise.all([0,1,2].map(i=>cupsLift(i,false,300)));
 
-  document.getElementById('cups-status').textContent='';
-  document.getElementById('cups-status').style.color='white';
+  statusEl.textContent='';statusEl.style.color='white';
   document.getElementById('cups-start-btn').disabled=false;
   balLocked=false;cupsState='idle';cupsBusy=false;
 }

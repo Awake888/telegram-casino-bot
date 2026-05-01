@@ -19,11 +19,23 @@ async def start_handler(message: types.Message):
     ))
     await message.answer(
         f"Добро пожаловать, {message.from_user.first_name}!\n\n"
-        "Нажми кнопку ниже, чтобы зайти в казино. "
-        "Игра идет на виртуальные монеты.",
+        "Нажми кнопку ниже, чтобы зайти в казино.\n"
+        "Игра идёт на виртуальные монеты.",
+        reply_markup=keyboard
+    )
+
+@dp.message_handler()
+async def any_message(message: types.Message):
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton(
+        text="🎰 Открыть Казино",
+        web_app=types.WebAppInfo(url=APP_URL)
+    ))
+    await message.answer(
+        "Нажми кнопку чтобы открыть казино 👇",
         reply_markup=keyboard
     )
 
 if __name__ == "__main__":
-    print("Бот запущен и готов к работе!")
+    print("✅ Бот запущен!")
     executor.start_polling(dp, skip_updates=True)

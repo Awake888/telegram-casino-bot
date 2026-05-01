@@ -208,25 +208,31 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;min-height:
 .sb-fs-count{font-family:'Unbounded',sans-serif;font-size:60px;font-weight:900;color:#ffd700;line-height:1;}
 .sb-fs-sub{font-family:'Unbounded',sans-serif;font-size:13px;color:#ff69b4;margin-top:8px;}
 /* CUPS IMPROVED */
-.cups-arena{background:linear-gradient(180deg,#0a1a2a,#0d2438);border-radius:20px;padding:24px 16px 16px;margin-bottom:12px;border:2px solid #3498db;box-shadow:0 0 30px rgba(52,152,219,.3);position:relative;overflow:hidden;}
-.cups-arena::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(52,152,219,.1),transparent 70%);pointer-events:none;}
-.cups-table{width:100%;height:8px;background:linear-gradient(180deg,#8B4513,#5D2E0C);border-radius:4px;margin-top:8px;box-shadow:0 4px 8px rgba(0,0,0,.5);}
-.cups-row{display:flex;justify-content:center;gap:24px;margin-bottom:4px;position:relative;}
-.cup-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:all .15s;position:relative;}
-.cup-wrap:hover:not(.disabled){transform:scale(1.08);}
-.cup-wrap.disabled{cursor:default;pointer-events:none;}
-.cup-wrap.selected .cup-body-el{box-shadow:0 0 20px rgba(52,152,219,.8),0 0 40px rgba(52,152,219,.4)!important;border-color:#3498db!important;}
-.cup-body-el{width:72px;height:75px;background:linear-gradient(135deg,#c0392b,#e74c3c,#c0392b);border-radius:6px 6px 28px 28px;border:3px solid #ff6b6b;box-shadow:0 6px 16px rgba(0,0,0,.6),inset 0 2px 0 rgba(255,255,255,.2),inset 0 -2px 0 rgba(0,0,0,.3);position:relative;transition:transform .4s cubic-bezier(.4,0,.2,1),box-shadow .2s;overflow:hidden;}
-.cup-body-el::before{content:'';position:absolute;top:6px;left:8px;right:8px;height:3px;background:rgba(255,255,255,.25);border-radius:2px;}
-.cup-body-el::after{content:'🥤';font-size:30px;display:flex;align-items:center;justify-content:center;height:100%;font-family:'Apple Color Emoji','Segoe UI Emoji',serif;}
-.cup-base-el{width:84px;height:10px;background:linear-gradient(180deg,#c0392b,#922b21);border-radius:0 0 8px 8px;border:2px solid #ff6b6b;border-top:none;margin-top:-1px;box-shadow:0 4px 8px rgba(0,0,0,.5);}
-.cup-lifted .cup-body-el{transform:translateY(-65px);}
-.cup-num{font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;color:#3498db;margin-top:8px;}
-.ball-slot{width:32px;height:32px;margin-top:4px;display:flex;align-items:center;justify-content:center;}
-.ball-real{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff6b6b,#e74c3c,#8b0000);border:2px solid #ff4444;box-shadow:0 2px 10px rgba(231,76,60,.7);transition:opacity .3s;opacity:0;}
-.ball-real.show{opacity:1;}
-.ball-real.green{background:radial-gradient(circle at 35% 30%,#7dff6b,#2ecc71,#1a8048);border-color:#2ecc71;box-shadow:0 2px 10px rgba(46,204,113,.7);}
-.cups-status{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;text-align:center;margin:10px 0 6px;min-height:20px;transition:color .3s;}
+.cups-arena{background:linear-gradient(180deg,#0a1a2a,#0d2438);border-radius:20px;padding:16px 12px 12px;margin-bottom:12px;border:2px solid #3498db;box-shadow:0 0 30px rgba(52,152,219,.3);position:relative;}
+.cups-row{display:flex;justify-content:space-around;align-items:flex-end;height:140px;position:relative;margin-bottom:6px;}
+.cup-item{display:flex;flex-direction:column;align-items:center;cursor:pointer;position:relative;width:80px;transition:filter .2s;}
+.cup-item:hover:not(.disabled){filter:brightness(1.2);}
+.cup-item.disabled{cursor:default;pointer-events:none;}
+/* Шарик — внизу */
+.cup-ball{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8888,#e74c3c,#8b0000);border:2px solid #ff5555;box-shadow:0 3px 12px rgba(231,76,60,.7);position:absolute;bottom:10px;left:50%;transform:translateX(-50%);opacity:0;transition:opacity .3s;z-index:1;}
+.cup-ball.visible{opacity:1;}
+.cup-ball.green{background:radial-gradient(circle at 35% 30%,#88ff88,#2ecc71,#1a8048);border-color:#2ecc71;box-shadow:0 3px 12px rgba(46,204,113,.7);}
+/* Стакан — накрывает шарик, поднимается вверх */
+.cup-body{width:72px;height:80px;background:linear-gradient(180deg,#8B4513 0%,#A0522D 40%,#8B4513 100%);border-radius:10px 10px 40% 40%;border:3px solid #cd853f;box-shadow:0 6px 16px rgba(0,0,0,.6),inset 0 2px 0 rgba(255,220,150,.2);position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:2;transition:transform .45s cubic-bezier(.4,0,.2,1);}
+.cup-body::before{content:'';position:absolute;top:8px;left:10px;right:10px;height:4px;background:rgba(255,220,150,.3);border-radius:2px;}
+.cup-body::after{content:'';position:absolute;top:16px;left:10px;right:10px;height:2px;background:rgba(255,220,150,.15);border-radius:2px;}
+.cup-base{width:82px;height:12px;background:linear-gradient(180deg,#A0522D,#6B3410);border-radius:0 0 10px 10px;border:2px solid #cd853f;border-top:none;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:3;box-shadow:0 4px 8px rgba(0,0,0,.5);}
+/* Поднятый стакан */
+.cup-item.lifted .cup-body{transform:translateX(-50%) translateY(-80px);}
+.cup-item.selected .cup-body{box-shadow:0 0 20px rgba(52,152,219,.8),inset 0 2px 0 rgba(255,220,150,.2)!important;}
+.cups-table{height:10px;background:linear-gradient(180deg,#5D2E0C,#3d1e08);border-radius:4px;margin:0 4px 4px;box-shadow:0 4px 8px rgba(0,0,0,.5);}
+.cups-status{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:700;text-align:center;margin:8px 0 4px;min-height:18px;}
+.cups-stats{display:flex;gap:20px;justify-content:center;margin-top:10px;}
+.cups-stat{font-family:'Unbounded',sans-serif;font-size:10px;color:#666;text-align:center;}
+.cups-stat span{display:block;font-size:18px;font-weight:700;color:white;margin-bottom:2px;}
+.cups-speed{display:flex;gap:6px;justify-content:center;margin-bottom:12px;}
+.speed-btn{font-family:'Unbounded',sans-serif;font-size:10px;font-weight:700;padding:7px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:#aaa;cursor:pointer;transition:all .2s;}
+.speed-btn.active{border-color:#3498db;color:#3498db;background:rgba(52,152,219,.1);}.cups-status{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;text-align:center;margin:10px 0 6px;min-height:20px;transition:color .3s;}
 .cups-stats{display:flex;gap:20px;justify-content:center;margin-top:10px;}
 .cups-stat{font-family:'Unbounded',sans-serif;font-size:10px;color:#666;text-align:center;}
 .cups-stat span{display:block;font-size:18px;font-weight:700;color:white;margin-bottom:2px;}
@@ -493,28 +499,28 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:white;min-height:
     <button class="back-btn" onclick="goPage('menu-page')">← Назад</button>
     <div class="gtitle">🎩 Стаканчики</div>
     <div class="cups-arena">
-      <div class="cups-row" id="cups-row" style="position:relative;">
-        <div class="cup-wrap disabled" id="cup0" onclick="cupsGuess(0)">
-          <div class="cup-body-el" id="cup-body0"></div>
-          <div class="cup-base-el"></div>
-          <div class="ball-slot" id="ball-slot0"></div>
+      <div class="cups-row" id="cups-row">
+        <div class="cup-item disabled" id="cup-item-0" onclick="cupsGuess(0)">
+          <div class="cup-ball" id="cup-ball-0"></div>
+          <div class="cup-body" id="cup-body-0"></div>
+          <div class="cup-base"></div>
         </div>
-        <div class="cup-wrap disabled" id="cup1" onclick="cupsGuess(1)">
-          <div class="cup-body-el" id="cup-body1"></div>
-          <div class="cup-base-el"></div>
-          <div class="ball-slot" id="ball-slot1"></div>
+        <div class="cup-item disabled" id="cup-item-1" onclick="cupsGuess(1)">
+          <div class="cup-ball" id="cup-ball-1"></div>
+          <div class="cup-body" id="cup-body-1"></div>
+          <div class="cup-base"></div>
         </div>
-        <div class="cup-wrap disabled" id="cup2" onclick="cupsGuess(2)">
-          <div class="cup-body-el" id="cup-body2"></div>
-          <div class="cup-base-el"></div>
-          <div class="ball-slot" id="ball-slot2"></div>
+        <div class="cup-item disabled" id="cup-item-2" onclick="cupsGuess(2)">
+          <div class="cup-ball" id="cup-ball-2"></div>
+          <div class="cup-body" id="cup-body-2"></div>
+          <div class="cup-base"></div>
         </div>
       </div>
       <div class="cups-table"></div>
       <div class="cups-status" id="cups-status">Нажми СТАРТ чтобы начать</div>
     </div>
     <div style="margin-bottom:12px;">
-      <div style="font-family:'Unbounded',sans-serif;font-size:10px;color:#888;margin-bottom:6px;text-align:center;">СКОРОСТЬ ПЕРЕМЕШИВАНИЯ:</div>
+      <div style="font-family:'Unbounded',sans-serif;font-size:10px;color:#888;margin-bottom:6px;text-align:center;">СКОРОСТЬ:</div>
       <div class="cups-speed">
         <button class="speed-btn active" id="spd-1" onclick="setCupsSpeed(1)">🐢 Медленно</button>
         <button class="speed-btn" id="spd-2" onclick="setCupsSpeed(2)">⚡ Быстро</button>
@@ -1225,10 +1231,18 @@ function sbToggleAuto(){
 }
 
 /* ══ CUPS (СТАКАНЧИКИ) ══ */
-// ballPos = индекс DOM-позиции где сейчас шарик (0,1,2 слева направо в текущем DOM)
-let cupsState='idle',ballPos=0,cupsSpeed=1,cupsWins=0,cupsLosses=0,cupsStreak=0,cupsBusy=false;
-const CUPS_SPEED={1:520,2:270,3:130};
-const CUPS_SHUFFLES={1:7,2:12,3:18};
+// Ключевая идея: НЕ двигаем DOM элементы.
+// Вместо этого отслеживаем массив positions[0,1,2] — какой "настоящий" стакан
+// стоит на каждой из 3 визуальных позиций.
+// ballCup = индекс настоящего стакана (0,1,2) под которым шарик.
+// Стаканы перемещаем через CSS transform translateX.
+
+let cupsState='idle', ballCup=0, cupsSpeed=1;
+let cupsWins=0, cupsLosses=0, cupsStreak=0, cupsBusy=false;
+// positions[i] = текущая X-позиция (0=лево,1=центр,2=право) стакана i
+let positions=[0,1,2];
+const SPEED={1:520,2:260,3:120};
+const SHUFFLES={1:8,2:14,3:20};
 
 function setCupsSpeed(s){
   cupsSpeed=s;
@@ -1236,195 +1250,191 @@ function setCupsSpeed(s){
   document.getElementById('spd-'+s).classList.add('active');
 }
 
-function getDomCups(){return [...document.getElementById('cups-row').children];}
+function getCupEl(i){return document.getElementById('cup-item-'+i);}
+function getBallEl(i){return document.getElementById('cup-ball-'+i);}
 
-function cupsReset(){
-  // Сбрасываем все стаканы и удаляем шарики
-  getDomCups().forEach((cup,i)=>{
-    cup.classList.add('disabled');cup.classList.remove('cup-lifted','selected');
-    cup.querySelector('.cup-body-el').style.transition='';
-    cup.querySelector('.cup-body-el').style.transform='';
-    cup.querySelector('.cup-body-el').style.boxShadow='';
-    const slot=cup.querySelector('.ball-slot');
-    if(slot)slot.innerHTML='';
-  });
-  document.getElementById('cups-status').style.color='white';
+// Ширина одной ячейки
+function slotW(){
+  return document.getElementById('cups-row').offsetWidth/3;
 }
 
-function showBallAt(domIdx,color='red'){
-  const cups=getDomCups();
-  // Сначала убираем все шарики
-  cups.forEach(cup=>{const s=cup.querySelector('.ball-slot');if(s)s.innerHTML='';});
-  // Ставим шарик в нужную позицию
-  const slot=cups[domIdx]?.querySelector('.ball-slot');
-  if(slot){
-    const ball=document.createElement('div');
-    ball.className='ball-real'+(color==='green'?' green':'');
-    slot.appendChild(ball);
-    requestAnimationFrame(()=>requestAnimationFrame(()=>ball.classList.add('show')));
+// Позиционируем все стаканы по массиву positions
+function applyPositions(animate, dur){
+  const sw=slotW();
+  for(let i=0;i<3;i++){
+    const el=getCupEl(i);
+    const targetX=(positions[i]-i)*sw;
+    if(animate){
+      el.style.transition=`transform ${dur}ms cubic-bezier(.4,0,.6,1)`;
+    } else {
+      el.style.transition='none';
+    }
+    el.style.transform=`translateX(${targetX}px)`;
   }
 }
 
-function hideBall(){
-  getDomCups().forEach(cup=>{
-    const s=cup.querySelector('.ball-slot');
-    if(s){
-      const b=s.querySelector('.ball-real');
-      if(b){b.classList.remove('show');setTimeout(()=>s.innerHTML='',300);}
-    }
-  });
+// Поднять/опустить стакан i
+function liftCup(i, up){
+  const el=getCupEl(i);
+  if(up) el.classList.add('lifted');
+  else   el.classList.remove('lifted');
 }
 
-async function liftCup(domIdx,up,dur){
-  const d=dur||CUPS_SPEED[cupsSpeed];
-  const cups=getDomCups();
-  const cup=cups[domIdx];if(!cup)return;
-  return new Promise(res=>{
-    cup.querySelector('.cup-body-el').style.transition=`transform ${d}ms cubic-bezier(.4,0,.2,1)`;
-    if(up)cup.classList.add('cup-lifted');else cup.classList.remove('cup-lifted');
-    setTimeout(res,d+20);
-  });
+function showBall(i, color){
+  const b=getBallEl(i);
+  b.className='cup-ball'+(color==='green'?' green':'');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>b.classList.add('visible')));
 }
 
-async function swapCups(a,b){
-  const dur=CUPS_SPEED[cupsSpeed];
-  const row=document.getElementById('cups-row');
-  const cups=getDomCups();
-  const wrapW=row.offsetWidth;
-  const cupW=wrapW/3;
-  const dx=(b-a)*cupW;
+function hideBall(i){
+  const b=getBallEl(i);
+  b.classList.remove('visible');
+}
 
-  cups[a].style.transition=`transform ${dur}ms cubic-bezier(.4,0,.6,1)`;
-  cups[b].style.transition=`transform ${dur}ms cubic-bezier(.4,0,.6,1)`;
-  cups[a].style.transform=`translateX(${dx}px)`;
-  cups[b].style.transform=`translateX(${-dx}px)`;
-
-  await new Promise(res=>setTimeout(res,dur+25));
-
-  cups[a].style.transition='none';cups[b].style.transition='none';
-  cups[a].style.transform='';cups[b].style.transform='';
-
-  if(a<b)row.insertBefore(cups[b],cups[a]);
-  else row.insertBefore(cups[a],cups[b]);
-
-  // Обновляем позицию шарика
-  if(ballPos===a)ballPos=b;
-  else if(ballPos===b)ballPos=a;
+function cupsReset(){
+  positions=[0,1,2];
+  for(let i=0;i<3;i++){
+    const el=getCupEl(i);
+    el.classList.add('disabled');
+    el.classList.remove('lifted','selected');
+    el.style.transition='none';
+    el.style.transform='';
+    hideBall(i);
+    document.getElementById('cup-body-'+i).style.boxShadow='';
+  }
+  document.getElementById('cups-status').style.color='white';
 }
 
 async function cupsStart(){
   if(cupsBusy)return;
   const bet=parseInt(document.getElementById('cups-bet').value)||0;
   if(bet<1)return showToast('Введи ставку!','lose');
-  cupsBusy=true;balLocked=true;
+  cupsBusy=true; balLocked=true;
   document.getElementById('cups-start-btn').disabled=true;
   cupsReset();
 
-  // Случайная позиция шарика
-  ballPos=Math.floor(Math.random()*3);
+  // Случайный стакан с шариком
+  ballCup=Math.floor(Math.random()*3);
 
-  const statusEl=document.getElementById('cups-status');
-  statusEl.textContent='👀 Запоминай!';statusEl.style.color='#ffd700';
+  const st=document.getElementById('cups-status');
+  st.textContent='👀 Запоминай!'; st.style.color='#ffd700';
 
-  // Поднимаем стакан над шариком, кладём шарик, опускаем
-  await liftCup(ballPos,true,400);
-  showBallAt(ballPos,'red');
-  await new Promise(res=>setTimeout(res,900));
-  hideBall();
-  await new Promise(res=>setTimeout(res,200));
-  await liftCup(ballPos,false,350);
-  await new Promise(res=>setTimeout(res,250));
+  // Показываем шарик: поднимаем нужный стакан
+  liftCup(ballCup, true);
+  await delay(460);
+  showBall(ballCup, 'red');
+  await delay(900);
+
+  // Прячем шарик и опускаем
+  hideBall(ballCup);
+  await delay(280);
+  liftCup(ballCup, false);
+  await delay(300);
 
   // Перемешиваем
-  statusEl.textContent='🔀 Следи...';statusEl.style.color='#3498db';
-  const n=CUPS_SHUFFLES[cupsSpeed];
-  const seqs=[[0,1],[1,2],[0,2],[1,2],[0,1],[0,2],[1,2],[0,1],[0,2],[1,2],[0,1],[0,2]];
+  st.textContent='🔀 Следи...'; st.style.color='#3498db';
+  const n=SHUFFLES[cupsSpeed];
+  const dur=SPEED[cupsSpeed];
+  const seq=[[0,1],[1,2],[0,2],[1,2],[0,1],[0,2],[0,1],[1,2],[0,2],[1,2],[0,1],[0,2]];
   for(let i=0;i<n;i++){
-    const[a,b]=seqs[i%seqs.length];
-    await swapCups(a,b);
-    await new Promise(res=>setTimeout(res,Math.round(CUPS_SPEED[cupsSpeed]*0.22)));
+    const [a,b]=seq[i%seq.length];
+    // Меняем позиции a и b
+    // Находим стаканы которые стоят на позициях a и b
+    const cupA=positions.indexOf(a);
+    const cupB=positions.indexOf(b);
+    // Свап в массиве positions
+    positions[cupA]=b;
+    positions[cupB]=a;
+    // Если шарик был в одном из них — обновляем (не нужно, ballCup не меняется)
+    applyPositions(true, dur);
+    await delay(dur+25);
+    await delay(Math.round(dur*0.2));
   }
 
-  // Разрешаем угадывать
-  statusEl.textContent='🎯 Где шарик?';statusEl.style.color='white';
-  getDomCups().forEach(cup=>cup.classList.remove('disabled'));
-  cupsBusy=false;cupsState='choosing';
+  // Ждём конца анимации
+  st.textContent='🎯 Где шарик?'; st.style.color='white';
+  for(let i=0;i<3;i++) getCupEl(i).classList.remove('disabled');
+  cupsBusy=false; cupsState='choosing';
 }
 
 async function cupsGuess(domIdx){
   if(cupsState!=='choosing'||cupsBusy)return;
-  cupsState='result';cupsBusy=true;
+  cupsState='result'; cupsBusy=true;
   const bet=parseInt(document.getElementById('cups-bet').value)||0;
-  const statusEl=document.getElementById('cups-status');
-  const cups=getDomCups();
+  const st=document.getElementById('cups-status');
 
-  // Блокируем
-  cups.forEach(cup=>cup.classList.add('disabled'));
-  cups[domIdx].classList.add('selected');
-  await new Promise(res=>setTimeout(res,150));
+  // Блокируем все
+  for(let i=0;i<3;i++) getCupEl(i).classList.add('disabled');
 
-  // Поднимаем ТОЛЬКО выбранный
-  await liftCup(domIdx,true,420);
+  // domIdx — это визуальная позиция (0=лево,1=центр,2=право)
+  // Нам нужен реальный индекс стакана на этой позиции
+  const chosenCup=positions.indexOf(domIdx);
 
-  const won=(ballPos===domIdx);
+  getCupEl(chosenCup).classList.add('selected');
+  await delay(150);
+
+  // Поднимаем выбранный стакан
+  liftCup(chosenCup, true);
+  await delay(470);
+
+  const won=(chosenCup===ballCup);
 
   if(won){
-    // Показываем шарик зелёным под выбранным
-    showBallAt(domIdx,'green');
-    await new Promise(res=>setTimeout(res,300));
-  } else {
-    // Показываем пусто под выбранным (нет шарика)
-    await new Promise(res=>setTimeout(res,400));
+    showBall(chosenCup, 'green');
+    document.getElementById('cup-body-'+chosenCup).style.boxShadow='0 0 25px rgba(46,204,113,.9)';
   }
+  await delay(400);
 
-  // Запрос к серверу
+  // Запрос на сервер
   try{
     const r=await api('/cups_guess',{method:'POST',body:JSON.stringify({user_id:getUid(),bet,won})});
     const d=await r.json();
     if(r.ok){
       if(won){
-        statusEl.textContent=`🎉 УГАДАЛ! +${d.win.toLocaleString('ru-RU')} монет`;statusEl.style.color='#2ecc71';
-        cups[domIdx].querySelector('.cup-body-el').style.boxShadow='0 0 25px rgba(46,204,113,.9)';
-        cupsWins++;cupsStreak=cupsStreak>0?cupsStreak+1:1;
+        st.textContent=`🎉 УГАДАЛ! +${d.win.toLocaleString('ru-RU')} монет`; st.style.color='#2ecc71';
+        cupsWins++; cupsStreak=cupsStreak>0?cupsStreak+1:1;
         showToast(`🎩 +${d.win.toLocaleString('ru-RU')} монет!`,'win',3000);
       } else {
-        statusEl.textContent='😔 Нет...';statusEl.style.color='#e74c3c';
-        cups[domIdx].querySelector('.cup-body-el').style.boxShadow='0 0 25px rgba(231,76,60,.8)';
+        st.textContent='😔 Нет...'; st.style.color='#e74c3c';
+        document.getElementById('cup-body-'+chosenCup).style.boxShadow='0 0 25px rgba(231,76,60,.8)';
+        cupsLosses++; cupsStreak=cupsStreak<0?cupsStreak-1:-1;
       }
-      balLocked=false;updateBal();
+      balLocked=false; updateBal();
     }
-  }catch(e){showToast('Ошибка сервера','lose');balLocked=false;}
-
-  await new Promise(res=>setTimeout(res,500));
+  }catch(e){showToast('Ошибка сервера','lose'); balLocked=false;}
 
   if(!won){
+    await delay(500);
     // Поднимаем остальные два
-    const others=[0,1,2].filter(i=>i!==domIdx);
-    await Promise.all(others.map(i=>liftCup(i,true,380)));
-    // Показываем красный шарик под правильным
-    showBallAt(ballPos,'red');
-    cups[ballPos]?.querySelector('.cup-body-el') && (cups[ballPos].querySelector('.cup-body-el').style.boxShadow='0 0 25px rgba(46,204,113,.9)');
-    statusEl.textContent=`😔 Шарик был здесь! −${bet.toLocaleString('ru-RU')} монет`;
-    showToast('🎩 Вот где шарик!','lose',3000);
-    cupsLosses++;cupsStreak=cupsStreak<0?cupsStreak-1:-1;
+    for(let i=0;i<3;i++) if(i!==chosenCup) liftCup(i,true);
+    await delay(470);
+    // Показываем шарик под правильным
+    showBall(ballCup, 'red');
+    document.getElementById('cup-body-'+ballCup).style.boxShadow='0 0 25px rgba(46,204,113,.9)';
+    st.textContent=`😔 Шарик тут! −${bet.toLocaleString('ru-RU')} монет`; st.style.color='#e74c3c';
+    showToast('🎩 Шарик был в другом!','lose',3000);
   }
 
   document.getElementById('cups-wins').textContent=cupsWins;
   document.getElementById('cups-losses').textContent=cupsLosses;
   document.getElementById('cups-streak').textContent=Math.abs(cupsStreak)+(cupsStreak>1?'🔥':cupsStreak<-1?'❄️':'');
 
-  await new Promise(res=>setTimeout(res,2200));
+  await delay(2200);
 
-  // Прячем шарик и опускаем все стаканы
-  hideBall();
-  await new Promise(res=>setTimeout(res,250));
-  await Promise.all([0,1,2].map(i=>liftCup(i,false,280)));
-  cups.forEach(cup=>cup.querySelector('.cup-body-el').style.boxShadow='');
+  // Убираем шарики, опускаем стаканы
+  for(let i=0;i<3;i++){
+    hideBall(i);
+    document.getElementById('cup-body-'+i).style.boxShadow='';
+  }
+  await delay(250);
+  for(let i=0;i<3;i++) liftCup(i,false);
 
-  statusEl.textContent='';statusEl.style.color='white';
+  st.textContent=''; st.style.color='white';
   document.getElementById('cups-start-btn').disabled=false;
-  balLocked=false;cupsState='idle';cupsBusy=false;
+  balLocked=false; cupsState='idle'; cupsBusy=false;
 }
+
+function delay(ms){return new Promise(res=>setTimeout(res,ms));}
 
 /* ══ PROMO ══ */
 async function usePromo(){
